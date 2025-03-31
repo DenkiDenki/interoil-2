@@ -40,4 +40,42 @@ function interoil_reports_shortcode( $atts ) {
 }
 add_action('init', 'reports_init');
 
+function interoil_reports_func(api_url, reports_num){
+	echo '<h1>Últimas Noticias</h1> 
+    <ul id="listNews"></ul>
+
+    <script>
+        async function obtenerYConvertirXML() {
+            try {
+                const response = await fetch("https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/");
+                const xmlText = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+                let noticias = xmlDoc.getElementsByTagName("report");
+
+                for (let i = 0; i < noticias.length; i++) {
+                    let headline = xmlDoc.getElementsByTagName("file_headline")[i];
+                    let headline1 = headline.textContent.trim();
+                    let locationNode = xmlDoc.getElementsByTagName("location")[i];
+                    let locationHref = locationNode.getAttribute("href");
+                    let publishedDate = xmlDoc.getElementsByTagName("published")[i];
+                    let dateAndTime = publishedDate.getAttribute("date");
+                    let date = dateAndTime.split("T")[0];
+
+                    const li = document.createElement("li");
+                    li.innerHTML = `<strong>${headline1}</strong> - <a href="${locationHref}" target="_blank">${locationHref}</a> - ${date}`;
+                    document.getElementById("listNews").appendChild(li);
+                }
+
+            } catch (error) {
+                console.error("Error al obtener el XML:", error);
+            }
+        }
+
+        obtenerYConvertirXML();
+    </script>';
+	
+}
+
 ?>
