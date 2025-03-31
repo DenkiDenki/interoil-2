@@ -16,7 +16,7 @@ $example->run(); // Assuming run() is a method in ExampleClass that starts the a
 
 */
 /**
- * [interoil_reports] returns a accordeon widget of reports.
+ * [interoil_reports api_url='' reports_num=''] returns a accordeon widget of reports.
  * @return string Current Year
 */
 add_shortcode( 'interoil_reports', 'interoil_reports_shortcode' );
