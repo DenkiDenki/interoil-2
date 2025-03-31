@@ -41,13 +41,16 @@ function interoil_reports_shortcode( $atts ) {
 add_action('init', 'reports_init');
 
 function interoil_reports_func(api_url, reports_num){
+$api_url = api_url;
+$reports_num = reports_num;
+	
 	echo '<h1>Últimas Noticias</h1> 
     <ul id="listNews"></ul>
 
     <script>
         async function obtenerYConvertirXML() {
             try {
-                const response = await fetch("https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/");
+                const response = await fetch("$api_url");
                 const xmlText = await response.text();
                 const parser = new DOMParser();
                 const xmlDoc = parser.parseFromString(xmlText, "application/xml");
