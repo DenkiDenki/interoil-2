@@ -16,27 +16,28 @@ $example->run(); // Assuming run() is a method in ExampleClass that starts the a
 
 */
 /**
- * [current_year] returns the Current Year as a 4-digit string.
+ * [interoil_reports] returns a accordeon widget of reports.
  * @return string Current Year
 */
-
-add_shortcode( 'current_year', 'salcodes_year' );
-function salcodes_init(){
- function salcodes_year() {
- return getdate()['year'];
- }
-}
-add_action('init', 'salcodes_init');
-
-/** Always end your PHP files with this closing tag */
-
-add_shortcode( 'interoil_reports', 'interoil_reports_func' );
+add_shortcode( 'interoil_reports', 'interoil_reports_shortcode' );
 function reports_init(){
- function interoil_reports_func() {
- return getdate()['year'];
+// Add Shortcode
+function interoil_reports_shortcode( $atts ) {
+
+	// Attributes
+	$atts = shortcode_atts(
+		array(
+			'api_url' => 'https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/',
+			'reports_num' => '10',
+		),
+		$atts,
+		'interoil_reports'
+	);
+
+	// Return 
+	return interoil_reports_func( $atts['api_url'] );
  }
 }
 add_action('init', 'reports_init');
-?>
 
 ?>
