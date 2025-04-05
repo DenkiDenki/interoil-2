@@ -197,6 +197,14 @@ function interoil_reports_front_shortcode($atts) {
                 display: block;
                 width: 100%;
             }
+            .left-content{
+                font-size: 1.2;
+            }
+            .right-content{
+                font-size: 1;
+            }
+            .accordion-content{
+                font-size: 1.2;}
         }
             /**/* Accordion styles **/
             .accordion {
@@ -284,6 +292,12 @@ function interoil_reports_front_shortcode($atts) {
                                     let publishedDate = xmlDoc.getElementsByTagName("published")[i];
                                     let dateAndTime = publishedDate.getAttribute("date");
                                     let date = dateAndTime.split("T")[0];
+                                    let partes = fechaOriginal.split("-");
+                                    let year = partes[0];
+                                    let month = partes[1];
+                                    let day = partes[2];
+
+                                    let fechaFormateada = `${day}.${month}.${year}`;
     
                                     const tr = document.createElement("tr");
                                     tr.innerHTML = `                                    
