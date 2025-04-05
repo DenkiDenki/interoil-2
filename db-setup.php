@@ -10,12 +10,12 @@ function interoil_install () {
     $charset_collate = $wpdb->get_charset_collate();
 
     $sql = "CREATE TABLE $table_name (
-    id mediumint(9) NOT NULL AUTO_INCREMENT,
-    published_date varchar(50) NOT NULL,
-    file_name varchar(150) NOT NULL,
-    location_url varchar(150) NOT NULL,
-    upload_dir varchar(150) NOT NULL,
-    PRIMARY KEY (id) varchar(150)
+    id INT(10) NOT NULL AUTO_INCREMENT,
+    published_date VARCHAR(50) NOT NULL,
+    file_name VARCHAR(150) NOT NULL,
+    location_url VARCHAR(150) NOT NULL,
+    upload_dir VARCHAR(150) NOT NULL,
+    PRIMARY KEY (id)
     ) $charset_collate;";
 
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -24,7 +24,7 @@ function interoil_install () {
 
  }
 
- function interoil_install_data() {
+ function interoil_create_upload_folder() {
 	global $wpdb;
 	
     $upload_dir = wp_upload_dir();
@@ -80,4 +80,4 @@ function interoil_install () {
     }*/
 }
 register_activation_hook( __FILE__, 'interoil_install' );
-register_activation_hook( __FILE__, 'interoil_install_data' );
+register_activation_hook( __FILE__, 'interoil_create_upload_folder' );
