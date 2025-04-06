@@ -139,6 +139,8 @@ function interoil_reports_front_shortcode($atts) {
             text-align: left;
             padding: 5px;
             margin: 0;
+            text-transform: uppercase;
+            font-size: 14px;
         }
     
         .reports-container h2 {
@@ -146,6 +148,8 @@ function interoil_reports_front_shortcode($atts) {
             text-align: left;
             margin: 0;
             padding: 10px;
+            padding-bottom: 40px;
+            font-size: 24px;
         }
     
         #listNews {
@@ -163,8 +167,10 @@ function interoil_reports_front_shortcode($atts) {
     
         .reports-container {
             margin: auto;
+            margin-top: 40px;
             background: white;
             padding: 20px;
+            border-top: 1px solid #b5d9e9!important;
         }
     
         .reports-container table {
@@ -193,68 +199,80 @@ function interoil_reports_front_shortcode($atts) {
         }
     
         @media (max-width: 600px) {
-            td, th {
-                display: block;
+        td:first-child {
+            min-width: 100%;
+        }    
+        td, th {
                 width: 100%;
             }
             .left-content{
-                font-size: 1.2;
+                font-size: 1.2em;
             }
             .right-content{
-                font-size: 1;
+                font-size: 1rem;
             }
             .accordion-content{
-                font-size: 1.2;}
+                font-size: 1.2em;
+            }
+            .reports-container {
+                padding: 0;
+            }
+            .reports-container h3 {
+                color: #1C6C8E;
+                text-align: left;
+                padding: 0;
+                margin: 0;
+                font-size: 16px;
+                text-transform: uppercase;
+            }
         }
-            /**/* Accordion styles **/
+            /** Accordion styles **/
             .accordion {
-      width: 100%;
-      border: 1px solid #ccc;
-      border-top: 2px solid #1C6C8E!important;
-      border-radius: 8px;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            font-family: "Acumin", Sans-serif;
+            }
 
-    .accordion-header {
-      background-color: #f5f5f5!important;
-      cursor: pointer;
-      padding: 1em;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      border: none;
-      border-bottom: 1px solid #1C6C8E!important;;
-      width: 100%;
-      text-align: left;
-      outline: none;
-      color: #1C6C8E!important;
-    
-    }
+            .accordion-header {
+            background-color: #ffffff!important;
+            cursor: pointer;
+            padding: 1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            border: none;
+            width: 100%;
+            text-align: left;
+            outline: none;
+            color: #1C6C8E!important;
+            font-size: 1.2em;
+            
+            }
 
-    .accordion-content {
-      display: none;
-      padding: 1em;
-      background-color: #fff;
-      transition: max-height 0.4s ease, padding 0.3s ease;
-      border-top: 1px solid #ccc;
-    }
-     .accordion.open .accordion-content {
-      /*max-height: 500px;  Valor suficiente para mostrar el contenido 
-      padding: 1em;*/
-      display: block;
-    }
-    
-       .left-content {
-      flex: 1;
-      text-align: left;
-    }
+            .accordion-content {
+            display: none;
+            padding: 1em;
+            background-color: #fff;
+            transition: max-height 0.4s ease, padding 0.3s ease;
+            border-top: 1px solid #ccc;
+            }
+            .accordion.open .accordion-content {
+            /*max-height: 500px;  Valor suficiente para mostrar el contenido 
+            padding: 1em;*/
+            display: block;
+            }
+            
+            .left-content {
+            flex: 1;
+            text-align: left;
+            }
 
-    .right-content {
-      text-align: right;
-    }
-     
+            .right-content {
+            text-align: right;
+            }
+            
         </style>
     
         <div class="reports-container">
@@ -292,16 +310,16 @@ function interoil_reports_front_shortcode($atts) {
                                     let publishedDate = xmlDoc.getElementsByTagName("published")[i];
                                     let dateAndTime = publishedDate.getAttribute("date");
                                     let date = dateAndTime.split("T")[0];
-                                    let partes = fechaOriginal.split("-");
+                                    let partes = date.split("-");
                                     let year = partes[0];
                                     let month = partes[1];
                                     let day = partes[2];
 
-                                    let fechaFormateada = `${day}.${month}.${year}`;
+                                    let formatDate= `${day}.${month}.${year}`;
     
                                     const tr = document.createElement("tr");
                                     tr.innerHTML = `                                    
-                                    <td><a href="${locationHref}">${headline1}</a></td><td>${date}</td>`;
+                                    <td><a href="${locationHref}">${headline1}</a></td><td>${formatDate}</td>`;
                                     document.getElementById("listNews").appendChild(tr);
                                 }
                             } catch (error) {

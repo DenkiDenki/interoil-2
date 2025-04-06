@@ -15,7 +15,7 @@ function interoil_reports_shortcode($atts) {
         return "<p>No hay informes disponibles.</p>";
     }
 
-    $output = '<div class="interoil-reports"><h3>Últimos Reportes</h3><table>';
+    $output = '<div class="interoil-reports"><table>';
     $output .= '<tr><th>Evento</th><th>Fecha</th></tr>';
 
     foreach ($reports as $report) {
