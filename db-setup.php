@@ -13,6 +13,7 @@ function interoil_install () {
     id INT(10) NOT NULL AUTO_INCREMENT,
     published_date VARCHAR(50) NOT NULL,
     file_name VARCHAR(150) NOT NULL,
+    category VARCHAR(50) NOT NULL,
     location_url VARCHAR(150) NOT NULL,
     upload_dir VARCHAR(150) NOT NULL,
     PRIMARY KEY (id)
