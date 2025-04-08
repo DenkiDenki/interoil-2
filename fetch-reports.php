@@ -66,7 +66,7 @@ function interoil_procesar_feed_xml() {
         return;
     }
 
-    // Mostrar resultados (puedes omitir esto en producción)
+    // Mostrar results (puedes omitir esto en producción)
     echo "<table><thead><tr><th>Título</th><th>Fecha</th></tr></thead><tbody>";
 
     foreach ($reportes as $reporte) {
@@ -81,27 +81,27 @@ function interoil_procesar_feed_xml() {
     echo "</tbody></table>";
 }
 
-function interoil_crear_txt_en_uploads($nombre_archivo, $contenido) {
+function interoil_crear_txt_en_uploads($file_name, $content) {
     // Obtener la ruta base del directorio de uploads
     $upload_dir = wp_upload_dir();
-    $carpeta = $upload_dir['basedir'] . '/pdfs';
+    $target_dir = $upload_dir['basedir'] . '/pdfs/';
 
-    // Crear carpeta si no existe
-    if (!file_exists($carpeta)) {
-        wp_mkdir_p($carpeta);
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0755, true);
     }
 
+
     // Ruta completa del archivo
-    $ruta_archivo = trailingslashit($carpeta) . sanitize_file_name($nombre_archivo) . '.txt';
+    $path_file = trailingslashit($target_dir) . sanitize_file_name($file_name) . '.txt';
 
     // Crear y escribir el archivo
-    $resultado = file_put_contents($ruta_archivo, $contenido);
+    $result = file_put_contents($path_file, $content);
 
-    if ($resultado === false) {
+    if ($result === false) {
         return "❌ Error al crear el archivo.";
     }
 
-    return "✅ Archivo creado correctamente en: " . $ruta_archivo;
+    return "✅ Archivo creado correctamente en: " . $path_file;
 }
 
 function interoil_reports_front_shortcode($atts) {
