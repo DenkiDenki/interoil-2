@@ -2,6 +2,8 @@
 global $interoil_db_version;
 $interoil_db_version = '1.0';
 
+require_once plugin_dir_path(__FILE__) . 'fetch_reports.php';
+
 function interoil_install() {
     global $wpdb;
 
@@ -23,65 +25,61 @@ function interoil_install() {
     add_option('interoil_db_version', $interoil_db_version);
 }
 
-function interoil_create_upload_folder() {
+register_activation_hook(__FILE__, 'interoil_install');
+
+function save_reports_ajax() {
+    // 🛠️ Log para verificar si el nonce llegó al servidor
+    error_log("Nonce recibido: " . ($_POST['security'] ?? 'NULL'));
+
+    check_ajax_referer('mi_nonce_seguro', 'security');
+
     global $wpdb;
 
-    $upload_dir = wp_upload_dir();
-    $target_dir = $upload_dir['basedir'] . '/pdfs/';
-
-    if (!file_exists($target_dir)) {
-        mkdir($target_dir, 0755, true);
-    }
-
-    /*
     $table_name = $wpdb->prefix . "interoil_pdfs";
 
-    $wpdb->insert( 
-        $table_name, 
-        array( 
-            'headline' => $headline,
-            'location_url' => $location_url, 
-            'published_date' => $published_date, 
-        ) 
-    );
-    */
+    $datos_json = $_POST['datos'] ?? '';
+    error_log("Datos recibidos (JSON): " . $datos_json);
 
-    /*
-    $api_url = "https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/";
+    $newReports = json_decode(stripslashes($datos_json), true); // array PHP
 
-    $xml_content = file_get_contents($api_url);
-    if ($xml_content === false) {
-        die("Error al obtener el XML.");
+    if (!empty($newReports)) {
+        foreach ($newReports as $report) {
+            $title = sanitize_text_field($report['title']);
+            $link = esc_url_raw($report['link']);
+            $date = sanitize_text_field($report['date']);
+
+            // Verificamos si ya existe la report por enlace o título
+            $existe = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_name WHERE location_url = %s",
+                $link
+            ));
+
+            if ($existe == 0) {
+                $wpdb->insert($table_name, [
+                    'file_name' => $title,
+                    'location_url' => $link,
+                    'published_date' => $date,
+                    'upload_dir' => $upload_dir['basedir'] . '/pdfs/reports/',
+                    'category' => 'reports',
+                ]);
+            }
+        }
+
+        echo 'Noticias guardadas correctamente.';
+    } else {
+        echo 'No se recibieron datos válidos.';
     }
 
-    $xml = simplexml_load_string($xml_content);
-    if ($xml === false) {
-        die("Error al analizar el XML.");
+    // 🛠️ Verificar si el decode fue exitoso
+    if (is_array($newReports)) {
+        error_log("✅ Decodificación correcta. Total newReports: " . count($newReports));
+    } else {
+        error_log("❌ Error al decodificar JSON.");
     }
+    interoil_fetch_and_store_reports($newReports);
 
-    foreach ($xml->report as $report) {
-        $headline = trim((string)$report->file_headline);
-        $location_url = trim((string)$report->location['href']);
-        $published_date = trim((string)$report->published['date']);
-
-        // Descargar el archivo PDF
-        $file_name = basename($location_url);
-        $file_path = $target_dir . $file_name;
-        file_put_contents($file_path, file_get_contents($location_url));
-
-        // Insertar en la base de datos
-        $wpdb->insert( 
-            $table_name, 
-            array( 
-                'published_date' => $published_date,
-                'file_name' => $file_name,
-                'location_url' => $location_url,
-                'upload_dir' => $target_dir,
-            ) 
-        );
-    }
-    */
+    wp_die();
 }
 
-register_activation_hook(__FILE__, 'interoil_install');
-register_activation_hook(__FILE__, 'interoil_create_upload_folder');
+add_action('wp_ajax_guardar_noticias', 'save_reports_ajax');
+add_action('wp_ajax_nopriv_guardar_noticias', 'save_reports_ajax');

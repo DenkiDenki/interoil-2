@@ -2,12 +2,27 @@
 function interoil_reports_shortcode($atts) {
     global $wpdb;
     $table_name = $wpdb->prefix . "interoil_pdfs";
+    $first = true;
 
     $atts = shortcode_atts(
-        array('reports_num' => 10),
+        array(
+            'api_url' => 'https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/',
+            'reports_num' => 10,
+        ),
         $atts,
         'interoil_reports'
     );
+
+     // Validate API URL
+     if (empty($atts['api_url']) || !filter_var($atts['api_url'], FILTER_VALIDATE_URL)) {
+        return 'Invalid API URL.';
+    }
+
+    // Validate number of reports
+    if (!is_numeric($atts['reports_num']) || $atts['reports_num'] <= 0) {
+        return 'Invalid number of reports.';
+    }
+
     $reports_num = intval($atts['reports_num']);
 
     $reports = $wpdb->get_results(
