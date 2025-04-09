@@ -2,7 +2,7 @@
 function interoil_reports_shortcode($atts) {
     global $wpdb;
     $table_name = $wpdb->prefix . "interoil_pdfs";
-    $first = true;
+    $first = false;
 
     $atts = shortcode_atts(
         array(
@@ -185,7 +185,7 @@ function interoil_reports_shortcode($atts) {
                             <i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
                     </div>
                     <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
-                        <h2>Interoil Exploration and Production ASAs financial calendar for 2024</h2>
+                        <!--h2>Interoil Exploration and Production ASAs financial calendar for 2024</h2-->
                         <table class="reports-table">
                             <thead>
                                 <tr>

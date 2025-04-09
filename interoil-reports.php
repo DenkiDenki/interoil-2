@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name:  Interoil Reports
-Version: 1.0.12
+Version: 1.0.13
 Description: Output a list of reports from Interoil.
 Author: Denisa Gerez
 Author URI: https://github.com/DenkiDenki/
@@ -25,7 +25,7 @@ require_once plugin_dir_path(__FILE__) . 'shortcode-display.php';
  */
 function plugin_interoil_reports_activate() {
     interoil_install();
-    interoil_create_upload_folder();
+    //interoil_create_upload_folder();
     //interoil_fetch_and_store_reports();
     flush_rewrite_rules();
 }

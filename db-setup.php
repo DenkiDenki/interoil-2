@@ -2,8 +2,6 @@
 global $interoil_db_version;
 $interoil_db_version = '1.0';
 
-require_once plugin_dir_path(__FILE__) . 'fetch_reports.php';
-
 function interoil_install() {
     global $wpdb;
 
@@ -42,7 +40,16 @@ function save_reports_ajax() {
 
     $newReports = json_decode(stripslashes($datos_json), true); // array PHP
 
-    if (!empty($newReports)) {
+    $response = [
+        'status' => 'ok',
+        'saved' => 0,
+        'skipped' => 0,
+        'errors' => [],
+    ];
+
+    if (is_array($newReports)) {
+        $upload_dir = wp_upload_dir();
+        
         foreach ($newReports as $report) {
             $title = sanitize_text_field($report['title']);
             $link = esc_url_raw($report['link']);
@@ -55,28 +62,32 @@ function save_reports_ajax() {
             ));
 
             if ($existe == 0) {
-                $wpdb->insert($table_name, [
+                $inserted = $wpdb->insert($table_name, [
                     'file_name' => $title,
                     'location_url' => $link,
                     'published_date' => $date,
                     'upload_dir' => $upload_dir['basedir'] . '/pdfs/reports/',
                     'category' => 'reports',
                 ]);
+
+                if ($inserted !== false) {
+                    $response['saved']++;
+                } else {
+                    $response['errors'][] = "Error al insertar reporte: $title";
+                }
+            }else {
+                $response['skipped']++;
             }
         }
-
-        echo 'Noticias guardadas correctamente.';
+        require_once plugin_dir_path(__FILE__) . 'fetch_reports.php';
+        interoil_fetch_and_store_reports($newReports);
     } else {
-        echo 'No se recibieron datos válidos.';
+        $response['status'] = 'error';
+        $response['errors'][] = 'Datos no válidos o JSON mal formado.';
     }
 
-    // 🛠️ Verificar si el decode fue exitoso
-    if (is_array($newReports)) {
-        error_log("✅ Decodificación correcta. Total newReports: " . count($newReports));
-    } else {
-        error_log("❌ Error al decodificar JSON.");
-    }
-    interoil_fetch_and_store_reports($newReports);
+    // Responder como JSON
+    wp_send_json($response);
 
     wp_die();
 }
