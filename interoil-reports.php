@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name:  Interoil Reports
-Version: 1.0.13
+Version: 1.0.17
 Description: Output a list of reports from Interoil.
 Author: Denisa Gerez
 Author URI: https://github.com/DenkiDenki/

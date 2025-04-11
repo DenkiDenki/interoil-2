@@ -10,11 +10,12 @@ function interoil_install() {
 
     $sql = "CREATE TABLE $table_name (
         id INT(10) NOT NULL AUTO_INCREMENT,
-        published_date VARCHAR(50) NOT NULL,
+        published_date VARCHAR(50) NULL,
         file_name VARCHAR(150) NOT NULL,
         category VARCHAR(50) NOT NULL,
-        location_url VARCHAR(150) NOT NULL,
-        upload_dir VARCHAR(150) NOT NULL,
+        location_url VARCHAR(150) NULL,
+        upload_dir TEXT NOT NULL,
+        description TEXT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
 
@@ -49,7 +50,7 @@ function save_reports_ajax() {
 
     if (is_array($newReports)) {
         $upload_dir = wp_upload_dir();
-        
+
         foreach ($newReports as $report) {
             $title = sanitize_text_field($report['title']);
             $link = esc_url_raw($report['link']);
@@ -66,8 +67,8 @@ function save_reports_ajax() {
                     'file_name' => $title,
                     'location_url' => $link,
                     'published_date' => $date,
-                    'upload_dir' => $upload_dir['basedir'] . '/pdfs/reports/',
-                    'category' => 'reports',
+                    'upload_dir' => $upload_dir['baseurl'] . '/pdfs/reports/' . convert_name_to_slug_pdf($title),
+                    'category' => 'reports and presentations',
                 ]);
 
                 if ($inserted !== false) {
@@ -79,7 +80,7 @@ function save_reports_ajax() {
                 $response['skipped']++;
             }
         }
-        require_once plugin_dir_path(__FILE__) . 'fetch_reports.php';
+        require_once plugin_dir_path(__FILE__) . 'fetch-reports.php';
         interoil_fetch_and_store_reports($newReports);
     } else {
         $response['status'] = 'error';

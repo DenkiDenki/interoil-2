@@ -123,7 +123,7 @@ function interoil_js() {
         'mi-script-xml',
         plugin_dir_url(__FILE__) . 'js/get-xml.js',
         [],
-        filemtime(plugin_dir_path(__FILE__) . 'js/mi-script.js'),
+        filemtime(plugin_dir_path(__FILE__) . 'js/get-xml.js'),
         true
     );
 

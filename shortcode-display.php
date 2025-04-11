@@ -7,7 +7,6 @@ function interoil_reports_shortcode($atts) {
     $atts = shortcode_atts(
         array(
             'api_url' => 'https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/',
-            'reports_num' => 10,
         ),
         $atts,
         'interoil_reports'
@@ -18,17 +17,9 @@ function interoil_reports_shortcode($atts) {
         return 'Invalid API URL.';
     }
 
-    // Validate number of reports
-    if (!is_numeric($atts['reports_num']) || $atts['reports_num'] <= 0) {
-        return 'Invalid number of reports.';
-    }
-
-    $reports_num = intval($atts['reports_num']);
-
     $reports = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT published_date, file_name, category, upload_dir FROM $table_name ORDER BY published_date DESC LIMIT %d",
-            $reports_num
+            "SELECT published_date, file_name, category, upload_dir FROM $table_name ORDER BY published_date DESC",
         ),
         ARRAY_A
     );
@@ -57,7 +48,7 @@ function interoil_reports_shortcode($atts) {
                 text-align: left;
                 margin: 0;
                 text-transform: uppercase;
-                font-size: 16px;
+                font-size: 15px;
             }
             .reports-container h2 {
                 color: #1C6C8E;
@@ -68,6 +59,9 @@ function interoil_reports_shortcode($atts) {
             }
             #listNews {
                 color: #1C6C8E;
+            }
+            #listNews td, #listNews th {
+                background-color: #fff!important;
             }
             .reports-container a {
                 color: #1C6C8E;
@@ -82,7 +76,7 @@ function interoil_reports_shortcode($atts) {
                 background: white;
             }
             .reports-container .reports-table {
-                width: 70%;
+                width: 30%;
                 border-collapse: collapse;
                 font-weight: 300;
                 font-family: "Acumin", Sans-serif;
@@ -94,10 +88,10 @@ function interoil_reports_shortcode($atts) {
             }
             .reports-table th {
                 color: #1C6C8E;
-                font-size: 1.2em;
+                font-size: 13px;
             }
             .reports-table td {
-                font-size: 1.2em;
+                font-size: 15.4px;
             }
             .reports-table td:first-child {
                 min-width: 60%;
@@ -105,8 +99,18 @@ function interoil_reports_shortcode($atts) {
             .reports-table tbody>tr:nth-child(odd)>td {
                 background-color: #fff!important;
             }
+
+            @media (min-width: 600px) {
+                .date-mobile {
+                    display: none;
+                }
+            }
             
             @media (max-width: 600px) {
+                .interoil-reports{
+                margin-left: 0;
+                margin-right: 0;
+                }
                 .reports-container .reports-table {
                     width: 100%;
                 }   
@@ -133,12 +137,24 @@ function interoil_reports_shortcode($atts) {
                 .reports-table th, .reports-table td{
                     font-size: 0.8em;
                 }
+                .date-desktop {
+                    display: none;
+                }
+                .date-mobile {
+                    display: block;
+                    font-size: 0.85em;
+                    margin-top: 5px;
+                    color: #444;
+                }
+                .date-title{
+                    display: none;
+                }
             }
             .accordion-report {
                 width: 100%;
-                border-radius: 8px;
                 overflow: hidden;
                 font-family: "Acumin", Sans-serif;
+                border-bottom: 1px solid #1C6C8E36!important;
             }
             .accordion-header {
                 background-color: #ffffff!important;
@@ -152,15 +168,15 @@ function interoil_reports_shortcode($atts) {
                 text-align: left;
                 outline: none;
                 color: #1C6C8E!important;
-                padding: 1em 0;
+                padding: 0.9em 0em 0.8em;
                 font-size: 1.2em;
-                border-top: 1px solid #b5d9e9 !important;
+                border-top: 1px solid #1C6C8E36!important;   
             }
             .accordion-content {
                 max-height: 0;
                 overflow: hidden;
                 background-color: #fff;
-                transition: max-height 0.5s ease;
+                transition: max-height 0.7s ease;
             }
             .accordion-content h2 {
                 padding-left: 0;
@@ -175,7 +191,7 @@ function interoil_reports_shortcode($atts) {
             .right-content {
                 text-align: right;
             }
-        </style>
+            </style>
         <div class="reports-container">
             <div class="accordion-report" id="accordion-report">
                 <?php foreach ($pdfs_by_category as $category => $items): ?>
@@ -190,14 +206,17 @@ function interoil_reports_shortcode($atts) {
                             <thead>
                                 <tr>
                                     <th>EVENT</th>
-                                    <th>DATE</th>
+                                    <th class="date-title">DATE</th>
                                 </tr>
                             </thead>
                             <tbody id="listNews">
                                 <?php foreach ($items as $item): ?>
-                                    <tr>
-                                        <td><a href="<?php echo esc_url($item['upload_dir']); ?>" target="_blank"><?php echo esc_html($item['file_name']); ?></a></td>
-                                        <td class="reportDate"><?php echo esc_html($item['published_date']); ?></td>
+                                    <tr class="report-row">
+                                        <td class="event-cell">
+                                            <a href="<?php echo esc_url($item['upload_dir']); ?>" target="_blank"><?php echo esc_html($item['file_name']); ?></a>
+                                            <div class="reportDate date-mobile"><?php echo esc_html($item['published_date']); ?></div>
+                                        </td>
+                                        <td class="reportDate date-desktop"><?php echo esc_html($item['published_date']); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
