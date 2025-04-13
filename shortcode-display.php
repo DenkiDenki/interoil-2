@@ -99,14 +99,42 @@ function interoil_reports_shortcode($atts) {
             .reports-table tbody>tr:nth-child(odd)>td {
                 background-color: #fff!important;
             }
-
-            @media (min-width: 600px) {
+            .year-tabs {
+                display: flex;
+                gap: 10px;
+                margin: 10px 0;
+                flex-wrap: wrap;
+            }
+            .year-tab {
+                background: none;
+                border: none;
+                padding: 5px 10px;
+                cursor: pointer;
+                font-size: 14px;
+                color: #1C6C8E;
+                border-bottom: 2px solid transparent;
+            }
+            .year-tab.active {
+                font-weight: bold;
+                border-color: #1C6C8E;
+            }
+            .year-content {
+                display: none;
+            }
+            .year-content.active {
+                display: block;
+            }
+            @media (min-width: 769px) {
                 .date-mobile {
                     display: none;
                 }
             }
+            .year-tab:focus, .year-tab:hover{
+                background: none;
+                color: #1C6C8E;
+            }
             
-            @media (max-width: 600px) {
+            @media (max-width: 768px) {
                 .interoil-reports{
                 margin-left: 0;
                 margin-right: 0;
@@ -195,34 +223,52 @@ function interoil_reports_shortcode($atts) {
         <div class="reports-container">
             <div class="accordion-report" id="accordion-report">
                 <?php foreach ($pdfs_by_category as $category => $items): ?>
+                    <?php
+                        // Agrupar por año
+                        $items_by_year = [];
+                        foreach ($items as $item) {
+                            $year = date('Y', strtotime($item['published_date']));
+                            $items_by_year[$year][] = $item;
+                        }
+                        krsort($items_by_year); // Mostrar años desde el más reciente
+                        $years = array_keys($items_by_year);
+                        $latest_year = $years[0];
+                    ?>
                     <div class="accordion-header" onclick="toggleAccordion(this)">
-                        <h3 class="left-content"><?php echo esc_html($category); ?></h3>
-                        <span class="right-content">
-                            <i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
+                    <h3 class="left-content"><?php echo esc_html($category); ?></h3>
+                    <span class="right-content"><i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
+                </div>
+                <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
+                    <div class="year-tabs">
+                        <?php foreach ($years as $i => $year): ?>
+                            <button class="year-tab <?php echo $i === 0 ? 'active' : ''; ?>" onclick="switchYear(event, '<?php echo $category . '-' . $year; ?>')"><?php echo $year; ?></button>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
-                        <!--h2>Interoil Exploration and Production ASAs financial calendar for 2024</h2-->
-                        <table class="reports-table">
-                            <thead>
-                                <tr>
-                                    <th>EVENT</th>
-                                    <th class="date-title">DATE</th>
-                                </tr>
-                            </thead>
-                            <tbody id="listNews">
-                                <?php foreach ($items as $item): ?>
-                                    <tr class="report-row">
-                                        <td class="event-cell">
-                                            <a href="<?php echo esc_url($item['upload_dir']); ?>" target="_blank"><?php echo esc_html($item['file_name']); ?></a>
-                                            <div class="reportDate date-mobile"><?php echo esc_html($item['published_date']); ?></div>
-                                        </td>
-                                        <td class="reportDate date-desktop"><?php echo esc_html($item['published_date']); ?></td>
+                    <?php foreach ($items_by_year as $year => $year_items): ?>
+                        <div class="year-content <?php echo $year == $latest_year ? 'active' : ''; ?>" id="<?php echo $category . '-' . $year; ?>">
+                            <table class="reports-table">
+                                <thead>
+                                    <tr>
+                                        <th>EVENT</th>
+                                        <th class="date-title">DATE</th>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                <?php endforeach; ?>
+                                </thead>
+                                <tbody id="listNews">
+                                    <?php foreach ($year_items as $item): ?>
+                                        <tr class="report-row">
+                                            <td class="event-cell">
+                                                <a href="<?php echo esc_url($item['upload_dir']); ?>" target="_blank"><?php echo esc_html($item['file_name']); ?></a>
+                                                <div class="reportDate date-mobile"><?php echo esc_html($item['published_date']); ?></div>
+                                            </td>
+                                            <td class="reportDate date-desktop"><?php echo esc_html($item['published_date']); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
             </div>
         </div>
     </div>
@@ -245,10 +291,16 @@ function interoil_reports_shortcode($atts) {
             icon.classList.add("fa-plus");
         });
 
-        // Si el panel clicado estaba cerrado, lo abrimos (si ya estaba abierto, se queda cerrado)
         if (!isOpen) {
             currentContent.classList.add("open");
-            currentContent.style.maxHeight = currentContent.scrollHeight + "px";
+            // Buscar contenido del año activo
+            const activeYearContent = currentContent.querySelector('.year-content.active');
+            if (activeYearContent) {
+                currentContent.style.maxHeight = activeYearContent.offsetHeight + 80 + "px";
+            } else {
+                currentContent.style.maxHeight = currentContent.scrollHeight + "px";
+            }
+
             currentIcon.classList.remove("fa-plus");
             currentIcon.classList.add("fa-minus");
         }
@@ -270,7 +322,23 @@ function interoil_reports_shortcode($atts) {
 
             let formatDate = `${day}.${month}.${year}`;
             publishedDate.innerText = formatDate;
-        });  
+        });
+        function switchYear(event, id) {
+            event.preventDefault();
+            const container = event.target.closest('.accordion-content');
+            const tabs = container.querySelectorAll('.year-tab');
+            const contents = container.querySelectorAll('.year-content');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            const targetContent = document.getElementById(id);
+            targetContent.classList.add('active');
+
+            // Recalcular altura del acordeón
+            container.style.maxHeight = targetContent.offsetHeight + 80 + "px"; // 80px extra por padding/margen/tab buttons
+        }
     </script>
     <?php
     return ob_get_clean();
