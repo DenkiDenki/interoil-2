@@ -1,7 +1,10 @@
 <?php
 function interoil_fetch_and_store_reports($newReports) {
+    global $wpdb;
+    $table_pdfs = $wpdb->prefix . "interoil_pdfs";
+    $table_categories = $wpdb->prefix . "interoil_categories";
+
     if (!empty($newReports)) {
-        // Obtener la ruta base del directorio de uploads
         $upload_dir = wp_upload_dir();
         $destination_folder = trailingslashit($upload_dir['basedir']) . 'pdfs/reports/';
 
@@ -9,43 +12,41 @@ function interoil_fetch_and_store_reports($newReports) {
             $title = sanitize_text_field($report['title']);
             $link = esc_url_raw($report['link']);
             $date = sanitize_text_field($report['date']);
+            $category = sanitize_text_field($report['category'] ?? 'Reports and Presentations');
 
-            // Crear la carpeta si no existe
+            // Crear carpeta si no existe
             if (!file_exists($destination_folder)) {
                 wp_mkdir_p($destination_folder);
             }
 
-            // Nombre del archivo PDF
+            // Nombre y ruta del archivo PDF
             $file_name = convert_name_to_slug_pdf($title);
-            // Ruta completa para guardar el archivo PDF
             $full_route = trailingslashit($destination_folder) . $file_name;
+            $upload_url = trailingslashit($upload_dir['baseurl']) . 'pdfs/reports/' . $file_name;
 
-            // Verificar si el archivo ya existe
+            // Validaciones antes de descargar
             if (file_exists($full_route)) {
-                interoil_crear_txt_en_uploads('log-reporte', "El archivo ya existe: " . $full_route);
+                interoil_crear_txt_en_uploads('log-reporte', "⚠️ El archivo ya existe: " . $full_route);
                 continue;
             }
 
-            // Verificar si el enlace es válido y accesible
             if (!filter_var($link, FILTER_VALIDATE_URL)) {
-                interoil_crear_txt_en_uploads('log-reporte', "El enlace no es válido: " . $link);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no válido: " . $link);
                 continue;
             }
 
-            // Verificar si el enlace es accesible
             $headers = get_headers($link, 1);
             if ($headers === false || strpos($headers[0], '200') === false) {
-                interoil_crear_txt_en_uploads('log-reporte', "El enlace no es accesible: " . $link);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no accesible: " . $link);
                 continue;
             }
 
-            // Verificar si el enlace es un PDF
             if (!isset($headers['Content-Type']) || strpos($headers['Content-Type'], 'application/pdf') === false) {
-                interoil_crear_txt_en_uploads('log-reporte', "El enlace no es un PDF: " . $link);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ El enlace no apunta a un PDF: " . $link);
                 continue;
             }
 
-            // Descargar con cURL
+            // Descargar archivo con cURL
             $ch = curl_init($link);
             $fp = fopen($full_route, 'w+');
             curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -53,26 +54,56 @@ function interoil_fetch_and_store_reports($newReports) {
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_exec($ch);
 
-            // Validación de errores
             if (curl_errno($ch)) {
                 fclose($fp);
-                interoil_crear_txt_en_uploads('log-reporte', "No se pudo descargar.");
+                curl_close($ch);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Error al descargar archivo desde: $link");
                 continue;
             }
 
             curl_close($ch);
             fclose($fp);
-    
 
             $real_mime = mime_content_type($full_route);
             if ($real_mime !== 'application/pdf') {
-                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Archivo no es PDF real, tipo detectado: $real_mime");
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Archivo descargado no es un PDF: $real_mime");
                 unlink($full_route);
                 continue;
             }
 
-            interoil_crear_txt_en_uploads('log-reporte', "✅ Archivo guardado correctamente: " . $full_route);
-         }
+            // Obtener o crear category_id
+            $category_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table_categories WHERE name = %s",
+                $category
+            ));
+
+            if (!$category_id) {
+                $wpdb->insert($table_categories, [
+                    'name' => $category,
+                    'description' => '',
+                ]);
+                $category_id = $wpdb->insert_id;
+            }
+
+            // Verificar si ya existe en la base de datos por URL
+            $exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $table_pdfs WHERE location_url = %s",
+                $link
+            ));
+
+            if ($exists == 0) {
+                $wpdb->insert($table_pdfs, [
+                    'file_name'      => $file_name,
+                    'location_url'   => $link,
+                    'published_date' => $date,
+                    'upload_dir'     => $upload_url,
+                    'category_id'    => $category_id,
+                ]);
+                interoil_crear_txt_en_uploads('log-reporte', "✅ Reporte guardado: $title");
+            } else {
+                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Ya existe en la base de datos: $link");
+            }
+        }
     } else {
         interoil_crear_txt_en_uploads('log-reporte', "⚠️ No se recibieron datos válidos.");
     }

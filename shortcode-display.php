@@ -1,7 +1,8 @@
 <?php
 function interoil_reports_shortcode($atts) {
     global $wpdb;
-    $table_name = $wpdb->prefix . "interoil_pdfs";
+    $table_pdfs = $wpdb->prefix . "interoil_pdfs";
+    $table_categories = $wpdb->prefix . "interoil_categories";
     $first = false;
 
     $atts = shortcode_atts(
@@ -18,9 +19,10 @@ function interoil_reports_shortcode($atts) {
     }
 
     $reports = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT published_date, file_name, category, upload_dir FROM $table_name ORDER BY published_date DESC",
-        ),
+        "SELECT p.published_date, p.file_name, p.upload_dir, c.name AS category, c.description
+         FROM {$wpdb->prefix}interoil_pdfs p
+         JOIN {$wpdb->prefix}interoil_categories c ON p.category_id = c.id
+         ORDER BY p.published_date DESC",
         ARRAY_A
     );
 
@@ -32,8 +34,41 @@ function interoil_reports_shortcode($atts) {
     $pdfs_by_category = [];
     foreach ($reports as $fila) {
         $category = $fila['category'];
-        $pdfs_by_category[$category][] = $fila;
+        $description = $fila['description'];
+    
+        if (!isset($pdfs_by_category[$category])) {
+            $pdfs_by_category[$category] = [
+                'description' => $description,
+                'items' => []
+            ];
+        }
+    
+        $pdfs_by_category[$category]['items'][] = $fila;
     }
+    $category_order = [
+        'Financial Calendar',
+        'Reports and presentations',
+        'Annual Statement of Reserves',
+        'Prospectus',
+        'Auditors',
+        'Shareholders Reports',
+        'Annual General Meetings',
+        'Corporate Governance'
+    ];
+    // Ordenar las categorías manualmente
+    uksort($pdfs_by_category, function ($a, $b) use ($category_order) {
+        
+        $normalized_order = array_map('strtolower', $category_order);
+        $posA = array_search(strtolower($a), $normalized_order);
+        $posB = array_search(strtolower($b), $normalized_order);
+
+        // Si alguna categoría no está en el orden definido, colócala al final
+        $posA = $posA === false ? PHP_INT_MAX : $posA;
+        $posB = $posB === false ? PHP_INT_MAX : $posB;
+
+        return $posA - $posB;
+    });
+
     ob_start();
     ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -43,7 +78,7 @@ function interoil_reports_shortcode($atts) {
                 margin-left: 20px;
                 margin-right: 20px;
             }
-            .reports-container h3 {
+            .category-name {
                 color: #1C6C8E;
                 text-align: left;
                 margin: 0;
@@ -219,26 +254,48 @@ function interoil_reports_shortcode($atts) {
             .right-content {
                 text-align: right;
             }
+            .category-description {
+                font-weight: normal;
+                font-size: 14px;
+                color: #1C6C8E!important;
+                margin-top: 10px;
+                margin-bottom: 30px;
+            }
             </style>
         <div class="reports-container">
             <div class="accordion-report" id="accordion-report">
-                <?php foreach ($pdfs_by_category as $category => $items): ?>
+                <?php foreach ($pdfs_by_category as $category => $data): ?>
                     <?php
-                        // Agrupar por año
+                        $items = $data['items'];
+                        $description = $data['description'];
                         $items_by_year = [];
                         foreach ($items as $item) {
                             $year = date('Y', strtotime($item['published_date']));
                             $items_by_year[$year][] = $item;
                         }
-                        krsort($items_by_year); // Mostrar años desde el más reciente
+                        krsort($items_by_year); 
                         $years = array_keys($items_by_year);
                         $latest_year = $years[0];
+
+                        $allowed_tags = [
+                            'p' => [],
+                            'br' => [],
+                            'strong' => [],
+                            'em' => [],
+                            'a' => [
+                                'href' => [],
+                                'target' => [],
+                                'rel' => [],
+                            ],
+                        ];
+                        
                     ?>
                     <div class="accordion-header" onclick="toggleAccordion(this)">
-                    <h3 class="left-content"><?php echo esc_html($category); ?></h3>
+                    <h3 class="category-name left-content"><?php echo esc_html($category); ?></h3>
                     <span class="right-content"><i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
                 </div>
                 <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
+                <h3 class="category-description"><?php echo wp_kses($description, $allowed_tags); ?></h3>
                     <div class="year-tabs">
                         <?php foreach ($years as $i => $year): ?>
                             <button class="year-tab <?php echo $i === 0 ? 'active' : ''; ?>" onclick="switchYear(event, '<?php echo $category . '-' . $year; ?>')"><?php echo $year; ?></button>
@@ -294,12 +351,8 @@ function interoil_reports_shortcode($atts) {
         if (!isOpen) {
             currentContent.classList.add("open");
             // Buscar contenido del año activo
-            const activeYearContent = currentContent.querySelector('.year-content.active');
-            if (activeYearContent) {
-                currentContent.style.maxHeight = activeYearContent.offsetHeight + 80 + "px";
-            } else {
-                currentContent.style.maxHeight = currentContent.scrollHeight + "px";
-            }
+
+            currentContent.style.maxHeight = currentContent.scrollHeight + "px";
 
             currentIcon.classList.remove("fa-plus");
             currentIcon.classList.add("fa-minus");
@@ -337,7 +390,7 @@ function interoil_reports_shortcode($atts) {
             targetContent.classList.add('active');
 
             // Recalcular altura del acordeón
-            container.style.maxHeight = targetContent.offsetHeight + 80 + "px"; // 80px extra por padding/margen/tab buttons
+            container.style.maxHeight = container.scrollHeight + "px"; // 80px extra por padding/margen/tab buttons
         }
     </script>
     <?php

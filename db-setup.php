@@ -5,41 +5,91 @@ $interoil_db_version = '1.0';
 function interoil_install() {
     global $wpdb;
 
-    $table_name = $wpdb->prefix . "interoil_pdfs";
     $charset_collate = $wpdb->get_charset_collate();
+    $table_reports = $wpdb->prefix . "interoil_pdfs";
+    $table_categories = $wpdb->prefix . "interoil_categories";
 
-    $sql = "CREATE TABLE $table_name (
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+
+    // Crear tabla de categorías
+    $sql_categories = "CREATE TABLE $table_categories (
         id INT(10) NOT NULL AUTO_INCREMENT,
-        published_date VARCHAR(50) NULL,
-        file_name VARCHAR(150) NOT NULL,
-        category VARCHAR(50) NOT NULL,
-        location_url VARCHAR(150) NULL,
-        upload_dir TEXT NOT NULL,
+        name VARCHAR(50) NOT NULL UNIQUE,
         description TEXT NULL,
         PRIMARY KEY (id)
     ) $charset_collate;";
+    dbDelta($sql_categories);
 
-    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-    dbDelta($sql);
+    // Crear tabla de informes con relación a categoría
+    $sql_reports = "CREATE TABLE $table_reports (
+        id INT(10) NOT NULL AUTO_INCREMENT,
+        published_date VARCHAR(50) NULL,
+        file_name VARCHAR(150) NOT NULL,
+        category_id INT(10) NOT NULL,
+        location_url VARCHAR(150) NULL,
+        upload_dir TEXT NOT NULL,
+        description TEXT NULL,
+        PRIMARY KEY (id),
+        KEY category_id (category_id)
+    ) $charset_collate;";
+    dbDelta($sql_reports);
+
+    // Verificar si la columna antigua "category" existe y migrar si es necesario
+    $column = $wpdb->get_results("SHOW COLUMNS FROM $table_reports LIKE 'category'");
+    if (!empty($column)) {
+        // Migrar categorías existentes
+        $existing_reports = $wpdb->get_results("SELECT DISTINCT category FROM $table_reports");
+
+        foreach ($existing_reports as $report) {
+            $category_name = esc_sql($report->category);
+
+            // Insertar categoría si no existe
+            $wpdb->query(
+                $wpdb->prepare(
+                    "INSERT IGNORE INTO $table_categories (name) VALUES (%s)",
+                    $category_name
+                )
+            );
+
+            // Obtener ID de la nueva categoría
+            $category_id = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM $table_categories WHERE name = %s",
+                    $category_name
+                )
+            );
+
+            // Actualizar informes con el ID de la categoría
+            $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE $table_reports SET category_id = %d WHERE category = %s",
+                    $category_id,
+                    $category_name
+                )
+            );
+        }
+
+        // Eliminar columna antigua "category"
+        $wpdb->query("ALTER TABLE $table_reports DROP COLUMN category");
+    }
     add_option('interoil_db_version', $interoil_db_version);
 }
 
 register_activation_hook(__FILE__, 'interoil_install');
 
 function save_reports_ajax() {
-    // 🛠️ Log para verificar si el nonce llegó al servidor
     error_log("Nonce recibido: " . ($_POST['security'] ?? 'NULL'));
-
     check_ajax_referer('mi_nonce_seguro', 'security');
 
     global $wpdb;
 
-    $table_name = $wpdb->prefix . "interoil_pdfs";
+    $table_pdfs = $wpdb->prefix . "interoil_pdfs";
+    $table_categories = $wpdb->prefix . "interoil_categories";
 
     $datos_json = $_POST['datos'] ?? '';
     error_log("Datos recibidos (JSON): " . $datos_json);
 
-    $newReports = json_decode(stripslashes($datos_json), true); // array PHP
+    $newReports = json_decode(stripslashes($datos_json), true);
 
     $response = [
         'status' => 'ok',
@@ -55,20 +105,37 @@ function save_reports_ajax() {
             $title = sanitize_text_field($report['title']);
             $link = esc_url_raw($report['link']);
             $date = sanitize_text_field($report['date']);
+            $category_name = sanitize_text_field($report['category'] ?? 'reports and presentations');
+            $description = sanitize_text_field($report['description'] ?? '');
 
-            // Verificamos si ya existe la report por enlace o título
+            // 1. Verificar si la categoría ya existe
+            $category_id = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM $table_categories WHERE name = %s",
+                $category_name
+            ));
+
+            // 2. Insertar la categoría si no existe
+            if (!$category_id) {
+                $wpdb->insert($table_categories, [
+                    'name' => $category_name,
+                    'description' => $description,
+                ]);
+                $category_id = $wpdb->insert_id;
+            }
+
+            // 3. Verificar si el reporte ya existe
             $existe = $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(*) FROM $table_name WHERE location_url = %s",
+                "SELECT COUNT(*) FROM $table_pdfs WHERE location_url = %s",
                 $link
             ));
 
             if ($existe == 0) {
-                $inserted = $wpdb->insert($table_name, [
+                $inserted = $wpdb->insert($table_pdfs, [
                     'file_name' => $title,
                     'location_url' => $link,
                     'published_date' => $date,
                     'upload_dir' => $upload_dir['baseurl'] . '/pdfs/reports/' . convert_name_to_slug_pdf($title),
-                    'category' => 'reports and presentations',
+                    'category_id' => $category_id,
                 ]);
 
                 if ($inserted !== false) {
@@ -76,22 +143,23 @@ function save_reports_ajax() {
                 } else {
                     $response['errors'][] = "Error al insertar reporte: $title";
                 }
-            }else {
+            } else {
                 $response['skipped']++;
             }
         }
+
         require_once plugin_dir_path(__FILE__) . 'fetch-reports.php';
         interoil_fetch_and_store_reports($newReports);
+        
     } else {
         $response['status'] = 'error';
         $response['errors'][] = 'Datos no válidos o JSON mal formado.';
     }
 
-    // Responder como JSON
     wp_send_json($response);
-
     wp_die();
 }
+
 
 add_action('wp_ajax_guardar_noticias', 'save_reports_ajax');
 add_action('wp_ajax_nopriv_guardar_noticias', 'save_reports_ajax');
