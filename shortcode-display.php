@@ -189,13 +189,17 @@ function interoil_reports_shortcode($atts) {
                 .reports-container {
                     padding: 0;
                 }
-                .reports-container h3 {
+                .category-name{
                     color: #1C6C8E;
                     text-align: left;
                     padding: 0;
                     margin: 0;
                     font-size: 12px;
                     text-transform: uppercase;
+                }
+                .category-description {
+                    font-size: 12px;
+                    color: #1C6C8E!important;
                 }
                 .reports-table th, .reports-table td{
                     font-size: 0.8em;
