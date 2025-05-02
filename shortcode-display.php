@@ -13,7 +13,6 @@ function interoil_reports_shortcode($atts) {
         'interoil_reports'
     );
 
-     // Validate API URL
      if (empty($atts['api_url']) || !filter_var($atts['api_url'], FILTER_VALIDATE_URL)) {
         return 'Invalid API URL.';
     }
@@ -30,7 +29,6 @@ function interoil_reports_shortcode($atts) {
         return "<p>No hay informes disponibles.</p>";
     }
 
-    // Agrupar por categoría
     $pdfs_by_category = [];
     foreach ($reports as $fila) {
         $category = $fila['category'];
@@ -55,14 +53,12 @@ function interoil_reports_shortcode($atts) {
         'Annual General Meetings',
         'Corporate Governance'
     ];
-    // Ordenar las categorías manualmente
     uksort($pdfs_by_category, function ($a, $b) use ($category_order) {
         
         $normalized_order = array_map('strtolower', $category_order);
         $posA = array_search(strtolower($a), $normalized_order);
         $posB = array_search(strtolower($b), $normalized_order);
 
-        // Si alguna categoría no está en el orden definido, colócala al final
         $posA = $posA === false ? PHP_INT_MAX : $posA;
         $posB = $posB === false ? PHP_INT_MAX : $posB;
 
@@ -111,7 +107,7 @@ function interoil_reports_shortcode($atts) {
                 background: white;
             }
             .reports-container .reports-table {
-                width: 30%;
+                width: 100%;
                 border-collapse: collapse;
                 font-weight: 300;
                 font-family: "Acumin", Sans-serif;
@@ -265,7 +261,7 @@ function interoil_reports_shortcode($atts) {
                 margin-top: 10px;
                 margin-bottom: 30px;
             }
-            </style>
+        </style>
         <div class="reports-container">
             <div class="accordion-report" id="accordion-report">
                 <?php foreach ($pdfs_by_category as $category => $data): ?>
@@ -302,11 +298,11 @@ function interoil_reports_shortcode($atts) {
                 <h3 class="category-description"><?php echo wp_kses($description, $allowed_tags); ?></h3>
                     <div class="year-tabs">
                         <?php foreach ($years as $i => $year): ?>
-                            <button class="year-tab <?php echo $i === 0 ? 'active' : ''; ?>" onclick="switchYear(event, '<?php echo $category . '-' . $year; ?>')"><?php echo $year; ?></button>
+                            <button class="year-tab <?php echo $i === 0 ? 'active' : ''; ?>" onclick="switchYear(event, '<?php echo mb_strtolower((str_replace(' ', '', $category)),'UTF-8') . '-' . $year;str_replace(' ', '', $category) . '-' . $year; ?>')"><?php echo $year; ?></button>
                         <?php endforeach; ?>
                     </div>
                     <?php foreach ($items_by_year as $year => $year_items): ?>
-                        <div class="year-content <?php echo $year == $latest_year ? 'active' : ''; ?>" id="<?php echo $category . '-' . $year; ?>">
+                        <div class="year-content <?php echo $year == $latest_year ? 'active' : ''; ?>" id="<?php echo mb_strtolower((str_replace(' ', '', $category)),'UTF-8') . '-' . $year; ?>">
                             <table class="reports-table">
                                 <thead>
                                     <tr>
@@ -340,7 +336,6 @@ function interoil_reports_shortcode($atts) {
         const currentIcon = clickedHeader.querySelector(".icon");
         const isOpen = currentContent.classList.contains("open");
 
-        // Cerrar todos los paneles
         const allContents = accordion.querySelectorAll(".accordion-content");
         const allIcons = accordion.querySelectorAll(".accordion-header .icon");
         allContents.forEach(content => {
@@ -354,7 +349,6 @@ function interoil_reports_shortcode($atts) {
 
         if (!isOpen) {
             currentContent.classList.add("open");
-            // Buscar contenido del año activo
 
             currentContent.style.maxHeight = currentContent.scrollHeight + "px";
 
@@ -368,7 +362,7 @@ function interoil_reports_shortcode($atts) {
             }
         });
     }      
-    const reportDate = document.querySelectorAll(".reportDate"); 
+        const reportDate = document.querySelectorAll(".reportDate"); 
         reportDate.forEach(publishedDate => {
             let dateAndTime = publishedDate.innerText;
             let date = dateAndTime.split("T")[0];
@@ -393,9 +387,20 @@ function interoil_reports_shortcode($atts) {
             const targetContent = document.getElementById(id);
             targetContent.classList.add('active');
 
-            // Recalcular altura del acordeón
-            container.style.maxHeight = container.scrollHeight + "px"; // 80px extra por padding/margen/tab buttons
+            container.style.maxHeight = container.scrollHeight + "px";
         }
+        const financialLinks = document.querySelectorAll('[id^="financialcalendar-"] a');
+        
+        financialLinks.forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); 
+            event.stopPropagation(); 
+        });
+
+        link.style.pointerEvents = 'none';
+        link.style.cursor = 'default';
+        link.style.decoration = 'none';
+        });
     </script>
     <?php
     return ob_get_clean();

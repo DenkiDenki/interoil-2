@@ -11,7 +11,6 @@ function interoil_install() {
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
-    // Crear tabla de categorías
     $sql_categories = "CREATE TABLE $table_categories (
         id INT(10) NOT NULL AUTO_INCREMENT,
         name VARCHAR(50) NOT NULL UNIQUE,
@@ -20,7 +19,6 @@ function interoil_install() {
     ) $charset_collate;";
     dbDelta($sql_categories);
 
-    // Crear tabla de informes con relación a categoría
     $sql_reports = "CREATE TABLE $table_reports (
         id INT(10) NOT NULL AUTO_INCREMENT,
         published_date VARCHAR(50) NULL,
@@ -34,32 +32,26 @@ function interoil_install() {
     ) $charset_collate;";
     dbDelta($sql_reports);
 
-    // Verificar si la columna antigua "category" existe y migrar si es necesario
     $column = $wpdb->get_results("SHOW COLUMNS FROM $table_reports LIKE 'category'");
     if (!empty($column)) {
-        // Migrar categorías existentes
+        
         $existing_reports = $wpdb->get_results("SELECT DISTINCT category FROM $table_reports");
 
         foreach ($existing_reports as $report) {
             $category_name = esc_sql($report->category);
 
-            // Insertar categoría si no existe
             $wpdb->query(
                 $wpdb->prepare(
                     "INSERT IGNORE INTO $table_categories (name) VALUES (%s)",
                     $category_name
                 )
             );
-
-            // Obtener ID de la nueva categoría
             $category_id = $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT id FROM $table_categories WHERE name = %s",
                     $category_name
                 )
             );
-
-            // Actualizar informes con el ID de la categoría
             $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE $table_reports SET category_id = %d WHERE category = %s",
@@ -69,7 +61,6 @@ function interoil_install() {
             );
         }
 
-        // Eliminar columna antigua "category"
         $wpdb->query("ALTER TABLE $table_reports DROP COLUMN category");
     }
     add_option('interoil_db_version', $interoil_db_version);
@@ -108,13 +99,11 @@ function save_reports_ajax() {
             $category_name = sanitize_text_field($report['category'] ?? 'reports and presentations');
             $description = sanitize_text_field($report['description'] ?? '');
 
-            // 1. Verificar si la categoría ya existe
             $category_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM $table_categories WHERE name = %s",
                 $category_name
             ));
 
-            // 2. Insertar la categoría si no existe
             if (!$category_id) {
                 $wpdb->insert($table_categories, [
                     'name' => $category_name,
@@ -123,7 +112,6 @@ function save_reports_ajax() {
                 $category_id = $wpdb->insert_id;
             }
 
-            // 3. Verificar si el reporte ya existe
             $existe = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM $table_pdfs WHERE location_url = %s",
                 $link
@@ -159,7 +147,6 @@ function save_reports_ajax() {
     wp_send_json($response);
     wp_die();
 }
-
 
 add_action('wp_ajax_guardar_noticias', 'save_reports_ajax');
 add_action('wp_ajax_nopriv_guardar_noticias', 'save_reports_ajax');

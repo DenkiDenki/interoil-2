@@ -14,17 +14,14 @@ function interoil_fetch_and_store_reports($newReports) {
             $date = sanitize_text_field($report['date']);
             $category = sanitize_text_field($report['category'] ?? 'Reports and Presentations');
 
-            // Crear carpeta si no existe
             if (!file_exists($destination_folder)) {
                 wp_mkdir_p($destination_folder);
             }
 
-            // Nombre y ruta del archivo PDF
             $file_name = convert_name_to_slug_pdf($title);
             $full_route = trailingslashit($destination_folder) . $file_name;
             $upload_url = trailingslashit($upload_dir['baseurl']) . 'pdfs/reports/' . $file_name;
 
-            // Validaciones antes de descargar
             if (file_exists($full_route)) {
                 interoil_crear_txt_en_uploads('log-reporte', "⚠️ El archivo ya existe: " . $full_route);
                 continue;
@@ -46,7 +43,6 @@ function interoil_fetch_and_store_reports($newReports) {
                 continue;
             }
 
-            // Descargar archivo con cURL
             $ch = curl_init($link);
             $fp = fopen($full_route, 'w+');
             curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -71,7 +67,6 @@ function interoil_fetch_and_store_reports($newReports) {
                 continue;
             }
 
-            // Obtener o crear category_id
             $category_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM $table_categories WHERE name = %s",
                 $category
@@ -85,7 +80,6 @@ function interoil_fetch_and_store_reports($newReports) {
                 $category_id = $wpdb->insert_id;
             }
 
-            // Verificar si ya existe en la base de datos por URL
             $exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM $table_pdfs WHERE location_url = %s",
                 $link
@@ -113,7 +107,7 @@ function interoil_fetch_and_store_reports($newReports) {
  * Convierte el nombre a un slug para el archivo PDF.
  */
 function convert_name_to_slug_pdf($original_name) {
-    $slug = sanitize_title($original_name); // Convierte a "mi-informe-importante-2025"
+    $slug = sanitize_title($original_name); 
     return $slug . '.pdf';
 }
 
@@ -121,7 +115,6 @@ function convert_name_to_slug_pdf($original_name) {
  * Crea un archivo TXT en el directorio de uploads.
  */
 function interoil_crear_txt_en_uploads($file_name, $content) {
-    // Obtener la ruta base del directorio de uploads
     $upload_dir = wp_upload_dir();
     $target_dir = trailingslashit($upload_dir['basedir']) . 'pdfs/';
 
@@ -129,13 +122,10 @@ function interoil_crear_txt_en_uploads($file_name, $content) {
         wp_mkdir_p($target_dir);
     }
 
-    // Ruta completa del archivo
     $path_file = trailingslashit($target_dir) . sanitize_file_name($file_name) . '.txt';
 
-    // Agregar timestamp para cada entrada y nueva línea
     $content_to_write = "[" . date('Y-m-d H:i:s') . "] " . $content . PHP_EOL;
 
-    // Escribir en modo append
     $result = file_put_contents($path_file, $content_to_write, FILE_APPEND);
 
     if ($result === false) {
