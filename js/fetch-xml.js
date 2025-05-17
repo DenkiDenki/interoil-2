@@ -28,12 +28,12 @@ async function fetchAndSendReports() {
       }
   
       // Enviar a PHP por AJAX
-      fetch(my_ajax_object.ajax_url, {
+      fetch(reports_object.ajax_url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
-          action: 'guardar_noticias',
-          security: my_ajax_object.nonce,
+          action: 'guardar_reports',
+          security: reports_object.nonce,
           datos: JSON.stringify(newReports)
         })
       })
