@@ -16,7 +16,8 @@ if (!defined('ABSPATH')) {
 }
 
 require_once plugin_dir_path(__FILE__) . 'db-setup.php';
-require_once plugin_dir_path(__FILE__) . 'fetch-reports.php';
+require_once plugin_dir_path(__FILE__) . 'read-and-store-reports.php';
+require_once plugin_dir_path(__FILE__) . 'read-and-store-news.php';
 require_once plugin_dir_path(__FILE__) . 'shortcode-display.php';
 
 function plugin_interoil_reports_activate() {
