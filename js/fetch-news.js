@@ -1,15 +1,15 @@
-async function obtenerYEnviarNoticias() {
+async function getAndSendNews() {
     try {
       const response = await fetch("https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/");
       const xmlText = await response.text();
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(xmlText, "application/xml");
   
-      let reports = xmlDoc.getElementsByTagName("report");
+      let releases = xmlDoc.getElementsByTagName("press_releases");
   
-      let newReports = [];
-      for (let i = 0; i < reports.length; i++) {
-        let headline = xmlDoc.getElementsByTagName("file_headline")[i];
+      let newReleases = [];
+      for (let i = 0; i < releases.length; i++) {
+        let headline = xmlDoc.getElementsByTagName("headline")[i];
         let headline1 = headline.textContent.trim();
         let locationNode = xmlDoc.getElementsByTagName("location")[i];
         let locationHref = locationNode.getAttribute("href");
@@ -17,13 +17,13 @@ async function obtenerYEnviarNoticias() {
         let dateAndTime = publishedDate.getAttribute("date");
         let date = dateAndTime.split("T")[0];
       
-        newReports.push({
+        newReleases.push({
           title: headline1,
           link: locationHref,
           date: date,
         });
 
-        //console.log(newReports[i]);
+        console.log(newReleases[i]);
         
       }
   
@@ -34,7 +34,7 @@ async function obtenerYEnviarNoticias() {
         body: new URLSearchParams({
           action: 'guardar_noticias',
           security: my_ajax_object.nonce,
-          datos: JSON.stringify(newReports)
+          datos: JSON.stringify(newReleases)
         })
       })
       .then(res => res.text())
@@ -44,4 +44,4 @@ async function obtenerYEnviarNoticias() {
       console.error("Error al obtener el XML:", error);
     }
   }
-  document.addEventListener('DOMContentLoaded', obtenerYEnviarNoticias);
+  document.addEventListener('DOMContentLoaded', getAndSendNews);

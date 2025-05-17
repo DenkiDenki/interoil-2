@@ -141,16 +141,27 @@ function interoil_crear_txt_en_uploads($file_name, $content) {
  */
 function interoil_js() {
     wp_enqueue_script(
-        'mi-script-xml',
-        plugin_dir_url(__FILE__) . 'js/get-xml.js',
+        'interoil-reports-xml',
+        plugin_dir_url(__FILE__) . 'js/fetch-xml.js',
         [],
-        filemtime(plugin_dir_path(__FILE__) . 'js/get-xml.js'),
+        filemtime(plugin_dir_path(__FILE__) . 'js/fetch-xml.js'),
+        true
+    );
+    wp_enqueue_script(
+        'interoil-news-xml',
+        plugin_dir_url(__FILE__) . 'js/fetch-news.js',
+        [],
+        filemtime(plugin_dir_path(__FILE__) . 'js/fetch-news.js'),
         true
     );
 
-    wp_localize_script('mi-script-xml', 'my_ajax_object', [
+    wp_localize_script('interoil-reports-xml', 'my_ajax_object', [
         'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce'    => wp_create_nonce('mi_nonce_seguro')
+        'nonce'    => wp_create_nonce('interoil-reports')
+    ]);
+    wp_localize_script('interoil-news-xml', 'my_ajax_object', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce'    => wp_create_nonce('interoil-news')
     ]);
 }
 add_action('wp_enqueue_scripts', 'interoil_js');
