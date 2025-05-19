@@ -10,7 +10,7 @@ async function getAndSendNews() {
       let newReleases = [];
       for (let i = 0; i < releases.length; i++) {
         let headline = xmlDoc.getElementsByTagName("headline")[i];
-        let headline1 = headline.textContent.trim();
+        let headlineText = headline.textContent.trim();
         let locationNode = xmlDoc.getElementsByTagName("location")[i];
         let locationHref = locationNode.getAttribute("href");
         let publishedDate = xmlDoc.getElementsByTagName("published")[i];
@@ -18,7 +18,7 @@ async function getAndSendNews() {
         let date = dateAndTime.split("T")[0];
       
         newReleases.push({
-          title: headline1,
+          title: headlineText,
           link: locationHref,
           date: date,
         });
@@ -26,6 +26,27 @@ async function getAndSendNews() {
         console.log(newReleases[i]);
         
       }
+          // Peticiones paralelas
+      await Promise.all(newReports.map(async (report, index) => {
+        try {
+          const res = await fetch(report.link);
+          const htmlText = await res.text();
+
+          const parser = new DOMParser();
+          const post = parser.parseFromString(htmlText, "application/xml");
+
+          const pageTitle = post.querySelector("headline")?.textContent.trim() || "Sin título";
+          const postBody = post.querySelector("main")?.textContent.trim() || "Sin texto";
+
+          newReports[index].page_title = pageTitle;
+          newReports[index].post_body = postBody;
+          console.log(`Título de ${report.link}:`, pageTitle);
+          console.log(`Texto de ${report.link}:`, postBody);
+        } catch (err) {
+          console.error(`Error al obtener contenido de ${report.link}:`, err);
+          newReports[index].page_title = "Error al obtener título";
+        }
+      }));
   
       fetch(news_object.ajax_url, {
         method: 'POST',
