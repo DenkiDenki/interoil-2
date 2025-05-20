@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:  Interoil Reports
- * Version: 1.0.29
+ * Version: 1.0.33
  * Description: Output a list of reports from Interoil.
  * Author: Denisa Gerez
  * License: GPLv2 or later
@@ -16,12 +16,15 @@ if (!defined('ABSPATH')) {
 }
 
 require_once plugin_dir_path(__FILE__) . 'db-setup.php';
+require_once plugin_dir_path(__FILE__) . 'db-news-setup.php';
 require_once plugin_dir_path(__FILE__) . 'read-and-store-reports.php';
 require_once plugin_dir_path(__FILE__) . 'read-and-store-news.php';
 require_once plugin_dir_path(__FILE__) . 'shortcode-display.php';
+require_once plugin_dir_path(__FILE__) . 'shortcode-news.php';
 
 function plugin_interoil_reports_activate() {
     interoil_install();
+    interoil_news_install();
     flush_rewrite_rules();
 }
 register_activation_hook(__FILE__, 'plugin_interoil_reports_activate');

@@ -1,19 +1,19 @@
-async function getAndSendNews() {
+async function fetchAndSendNews() {
     try {
-      const response = await fetch("https://rss.globenewswire.com/Hexmlreportfeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/");
-      const xmlText = await response.text();
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+      const response2 = await fetch("https://rss.globenewswire.com/HexmlFeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/");
+      const xmlText2 = await response2.text();
+      const parser2 = new DOMParser();
+      const xmlDoc2 = parser2.parseFromString(xmlText2, "application/xml");
   
-      let releases = xmlDoc.getElementsByTagName("press_releases");
-  
+      let releases = xmlDoc2.getElementsByTagName("press_release");
+      
       let newReleases = [];
       for (let i = 0; i < releases.length; i++) {
-        let headline = xmlDoc.getElementsByTagName("headline")[i];
+        let headline = xmlDoc2.getElementsByTagName("headline")[i];
         let headlineText = headline.textContent.trim();
-        let locationNode = xmlDoc.getElementsByTagName("location")[i];
+        let locationNode = xmlDoc2.getElementsByTagName("location")[i];
         let locationHref = locationNode.getAttribute("href");
-        let publishedDate = xmlDoc.getElementsByTagName("published")[i];
+        let publishedDate = xmlDoc2.getElementsByTagName("published")[i];
         let dateAndTime = publishedDate.getAttribute("date");
         let date = dateAndTime.split("T")[0];
       
@@ -22,29 +22,29 @@ async function getAndSendNews() {
           link: locationHref,
           date: date,
         });
-
+       
         console.log(newReleases[i]);
         
       }
           // Peticiones paralelas
-      await Promise.all(newReports.map(async (report, index) => {
+      await Promise.all(newReleases.map(async (report, index) => {
         try {
-          const res = await fetch(report.link);
-          const htmlText = await res.text();
+          const res2 = await fetch(report.link);
+          const htmlText2 = await res2.text();
 
           const parser = new DOMParser();
-          const post = parser.parseFromString(htmlText, "application/xml");
+          const post = parser.parseFromString(htmlText2, "application/xml");
 
           const pageTitle = post.querySelector("headline")?.textContent.trim() || "Sin título";
           const postBody = post.querySelector("main")?.textContent.trim() || "Sin texto";
 
-          newReports[index].page_title = pageTitle;
-          newReports[index].post_body = postBody;
+          newReleases[index].page_title = pageTitle;
+          newReleases[index].post_body = postBody;
           console.log(`Título de ${report.link}:`, pageTitle);
           console.log(`Texto de ${report.link}:`, postBody);
         } catch (err) {
           console.error(`Error al obtener contenido de ${report.link}:`, err);
-          newReports[index].page_title = "Error al obtener título";
+          newReleases[index].page_title = "Error al obtener título";
         }
       }));
   
@@ -54,14 +54,14 @@ async function getAndSendNews() {
         body: new URLSearchParams({
           action: 'guardar_news',
           security: news_object.nonce,
-          datos: JSON.stringify(newReleases)
+          news: JSON.stringify(newReleases)
         })
       })
-      .then(res => res.text())
+      .then(res2 => res2.text())
       .then(data => console.log('PHP respondió News:', data));
       
     } catch (error) {
       console.error("Error al obtener el XML News:", error);
     }
   }
-  document.addEventListener('DOMContentLoaded', getAndSendNews);
+  document.addEventListener('DOMContentLoaded', fetchAndSendNews);

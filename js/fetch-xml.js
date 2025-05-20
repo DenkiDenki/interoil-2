@@ -23,7 +23,7 @@ async function fetchAndSendReports() {
           date: date,
         });
 
-        //console.log(newReports[i]);
+        console.log(newReports[i]);
         
       }
   
@@ -34,14 +34,14 @@ async function fetchAndSendReports() {
         body: new URLSearchParams({
           action: 'guardar_reports',
           security: reports_object.nonce,
-          datos: JSON.stringify(newReports)
+          datos: JSON.stringify(newReports)//reports_object
         })
       })
       .then(res => res.text())
-      .then(data => console.log('PHP respondió:', data));
+      .then(data => console.log('PHP respondió Reports:', data));
       
     } catch (error) {
-      console.error("Error al obtener el XML:", error);
+      console.error("Error al obtener el XML de reports:", error);
     }
   }
   document.addEventListener('DOMContentLoaded', fetchAndSendReports);

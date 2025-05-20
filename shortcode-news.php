@@ -1,15 +1,34 @@
 <?php
 function interoil_news_shortcode($atts) {
+    global $wpdb;
+    $table_news = $wpdb->prefix . "interoil_news";
+    
     $atts = shortcode_atts(
         array(
             'api_url' => 'https://rss.globenewswire.com/HexmlFeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/',
         ),
         $atts,
         'interoil_news'
-    );  ob_start();
+    ); 
+    if (empty($atts['api_url']) || !filter_var($atts['api_url'], FILTER_VALIDATE_URL)) {
+        return 'Invalid API URL.';
+    }
+
+    $newsPost = $wpdb->get_results(
+        "SELECT * FROM $table_news",
+        ARRAY_A
+    );
+
+    if (!$newsPost) {
+        return "<p>No hay noticias disponibles.</p>";
+    }
+    
+    ob_start();
     ?>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <style>
-    .container {
+    .news-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;
@@ -21,13 +40,13 @@ function interoil_news_shortcode($atts) {
     }
 
     @media (max-width: 768px) {
-      .container {
+      .news-container {
         grid-template-columns: repeat(2, 1fr);
       }
     }
 
     @media (max-width: 480px) {
-      .container {
+      .news-container {
         grid-template-columns: 1fr;
       }
     }
@@ -35,7 +54,7 @@ function interoil_news_shortcode($atts) {
 
     <h1>Listado de Elementos</h1>
   
-    <div class="container">
+    <div class="news-container">
         <div class="item">Elemento 1</div>
         <div class="item">Elemento 2</div>
         <div class="item">Elemento 3</div>

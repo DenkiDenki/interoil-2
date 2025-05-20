@@ -1,16 +1,18 @@
 <?php
-function interoil_read_and_store_reports($newPosts) {
+function interoil_read_and_store_news($newPosts) {
     global $wpdb;
     $table_news = $wpdb->prefix . "interoil_news";
 
     if (!empty($newPosts)) {
-        $upload_dir = wp_upload_dir();
-        $destination_folder = trailingslashit($upload_dir['basedir']) . 'pdfs/reports/';
+        //$upload_dir = wp_upload_dir();
+        //$destination_folder = trailingslashit($upload_dir['basedir']) . 'pdfs/reports/';
 
         foreach ($newPosts as $report) {
             $title = sanitize_text_field($report['title']);
             $link = esc_url_raw($report['link']);
             $date = sanitize_text_field($report['date']);
+            interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date");
+
             /*
             if (!file_exists($destination_folder)) {
                 wp_mkdir_p($destination_folder);
@@ -25,22 +27,23 @@ function interoil_read_and_store_reports($newPosts) {
                 continue;
             }
             */
+            /*
             if (!filter_var($link, FILTER_VALIDATE_URL)) {
                 interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no válido: " . $link);
                 continue;
-            }
-
+            }*/
+            /*
             $headers = get_headers($link, 1);
             if ($headers === false || strpos($headers[0], '200') === false) {
                 interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no accesible: " . $link);
                 continue;
             }
-
-            if (!isset($headers['Content-Type']) || strpos($headers['Content-Type'], 'application/pdf') === false) {
+                */
+            /*if (!isset($headers['Content-Type']) || strpos($headers['Content-Type'], 'application/pdf') === false) {
                 interoil_crear_txt_en_uploads('log-reporte', "❌ El enlace no apunta a un PDF: " . $link);
                 continue;
-            }
-
+            }*/
+            /*
             $ch = curl_init($link);
             $fp = fopen($full_route, 'w+');
             curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -64,7 +67,7 @@ function interoil_read_and_store_reports($newPosts) {
                 unlink($full_route);
                 continue;
             }
-
+            */
          /*   $category_id = $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM $table_categories WHERE name = %s",
                 $category
@@ -77,12 +80,15 @@ function interoil_read_and_store_reports($newPosts) {
                 ]);
                 $category_id = $wpdb->insert_id;
             }
-*/
+            */      
+            //$upload_url = trailingslashit($upload_dir['baseurl']) . 'pdfs/reports/' . $title . '.pdf';
+            /*
             $exists = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM $table_news WHERE location_url = %s",
                 $link
             ));
-
+            */
+            /*
             if ($exists == 0) {
                 $wpdb->insert($table_news, [
                     'title'      => $title,
@@ -94,6 +100,7 @@ function interoil_read_and_store_reports($newPosts) {
             } else {
                 interoil_crear_txt_en_uploads('log-reporte', "⚠️ Ya existe en la base de datos: $link");
             }
+                */
         }
     } else {
         interoil_crear_txt_en_uploads('log-reporte', "⚠️ No se recibieron datos válidos.");
