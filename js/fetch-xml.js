@@ -23,7 +23,7 @@ async function fetchAndSendReports() {
           date: date,
         });
 
-        console.log(newReports[i]);
+        //console.log(newReports[i]);
         
       }
   
@@ -37,8 +37,8 @@ async function fetchAndSendReports() {
           datos: JSON.stringify(newReports)//reports_object
         })
       })
-      .then(res => res.text())
-      .then(data => console.log('PHP respondió Reports:', data));
+      .then(res => res.text());
+      //.then(data => console.log('PHP respondió Reports:', data));
       
     } catch (error) {
       console.error("Error al obtener el XML de reports:", error);

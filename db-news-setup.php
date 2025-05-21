@@ -29,7 +29,7 @@ function create_db_news() {
         title VARCHAR(150) NOT NULL,
         location_url VARCHAR(150) NULL,
         permalink TEXT NOT NULL,
-        description TEXT NULL,
+        content TEXT NULL,
         KEY title (title)
     ) $charset_collate;";
     dbDelta($sql_news);
@@ -38,7 +38,9 @@ function create_db_news() {
 
 register_activation_hook(__FILE__, 'interoil_news_install');
 
-
+/**
+ * from ajax
+ */
 function save_news_ajax() {
     global $wpdb;
     $table_news = $wpdb->prefix . "interoil_news";
@@ -72,6 +74,7 @@ function save_news_ajax() {
     ];
 
     // Log en error_log para verificar desde PHP
+    error_log(print_r("Nuevos post desde", true));
     error_log(print_r($newPosts, true));
 
     if (is_array($newPosts)) {
@@ -82,6 +85,7 @@ function save_news_ajax() {
             $date = sanitize_text_field($post['date']);
             $slug = sanitize_title($title);
             $permalink = home_url('/news/' . $slug);
+            $post_content = sanitize_textarea_field($post['post_body']);
 
             $existe = $wpdb->get_var($wpdb->prepare(
                 "SELECT COUNT(*) FROM $table_news WHERE location_url = %s",
@@ -94,6 +98,7 @@ function save_news_ajax() {
                     'location_url' => $link,
                     'published_date' => $date,
                     'permalink' => $permalink,
+                    'content' => $post_content,
                 ]);
 
                 if ($inserted !== false) {

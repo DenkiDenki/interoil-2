@@ -1,14 +1,14 @@
 <?php
 /**
  * Plugin Name:  Interoil Reports
- * Version: 1.0.33
- * Description: Output a list of reports from Interoil.
+ * Version: 1.0.36
+ * Description: This plugin provides functionalities to fetch, view, and storage reports
+ * for Interoil operations. It is designed to integrate seamlessly with
+ * WordPress.
  * Author: Denisa Gerez
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: interoil-reports. This plugin provides functionalities to fetch, view, and storage reports
- * for Interoil operations. It is designed to integrate seamlessly with
- * WordPress.
+ * Text Domain: interoil-reports
 */
 
 if (!defined('ABSPATH')) {

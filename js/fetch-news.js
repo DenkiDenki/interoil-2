@@ -10,26 +10,27 @@ async function fetchAndSendNews() {
       let newReleases = [];
       for (let i = 0; i < releases.length; i++) {
         let headline = xmlDoc2.getElementsByTagName("headline")[i];
-        let headlineText = headline.textContent.trim();
+        let title = headline.textContent.trim();
         let locationNode = xmlDoc2.getElementsByTagName("location")[i];
-        let locationHref = locationNode.getAttribute("href");
+        let link = locationNode.getAttribute("href");
         let publishedDate = xmlDoc2.getElementsByTagName("published")[i];
         let dateAndTime = publishedDate.getAttribute("date");
         let date = dateAndTime.split("T")[0];
       
+
         newReleases.push({
-          title: headlineText,
-          link: locationHref,
+          title: title,
+          link: link,
           date: date,
         });
        
-        console.log(newReleases[i]);
+        //console.log(newReleases[i]);
         
       }
           // Peticiones paralelas
-      await Promise.all(newReleases.map(async (report, index) => {
+      await Promise.all(newReleases.map(async (release, index) => {
         try {
-          const res2 = await fetch(report.link);
+          const res2 = await fetch(release.link);
           const htmlText2 = await res2.text();
 
           const parser = new DOMParser();
@@ -40,10 +41,10 @@ async function fetchAndSendNews() {
 
           newReleases[index].page_title = pageTitle;
           newReleases[index].post_body = postBody;
-          console.log(`Título de ${report.link}:`, pageTitle);
-          console.log(`Texto de ${report.link}:`, postBody);
+          
+          console.log(`Texto de ${release.link}:`, postBody);
         } catch (err) {
-          console.error(`Error al obtener contenido de ${report.link}:`, err);
+          console.error(`Error al obtener contenido de ${release.link}:`, err);
           newReleases[index].page_title = "Error al obtener título";
         }
       }));
@@ -57,8 +58,8 @@ async function fetchAndSendNews() {
           news: JSON.stringify(newReleases)
         })
       })
-      .then(res2 => res2.text())
-      .then(data => console.log('PHP respondió News:', data));
+      .then(res2 => res2.text());
+      //.then(data => console.log('PHP respondió News:', data));
       
     } catch (error) {
       console.error("Error al obtener el XML News:", error);

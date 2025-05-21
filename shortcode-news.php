@@ -23,6 +23,17 @@ function interoil_news_shortcode($atts) {
         return "<p>No hay noticias disponibles.</p>";
     }
     
+    $newsPost = array_map(function($post) {
+        return [
+            'title' => $post['title'],
+            'link' => $post['location_url'],
+            'date' => $post['published_date'],
+            'permalink' => $post['permalink'],
+        ];
+    }, $newsPost);
+
+
+
     ob_start();
     ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -55,12 +66,13 @@ function interoil_news_shortcode($atts) {
     <h1>Listado de Elementos</h1>
   
     <div class="news-container">
-        <div class="item">Elemento 1</div>
-        <div class="item">Elemento 2</div>
-        <div class="item">Elemento 3</div>
-        <div class="item">Elemento 4</div>
-        <div class="item">Elemento 5</div>
-        <div class="item">Elemento 6</div>
+        <?php foreach ($newsPost as $post): ?>
+            <div class="item">
+                <h2><?php echo esc_html($post['title']); ?></h2>
+                <p><a href="<?php echo esc_url($post['link']); ?>" target="_blank">Ver noticia</a></p>
+                <p>Fecha: <?php echo esc_html($post['date']); ?></p>
+            </div>
+        <?php endforeach; ?>
     </div>
 
      <?php
