@@ -5,7 +5,7 @@ $interoil_db_news_version = '1.0';
 function interoil_news_install() {
     global $interoil_db_news_version;
 
-    $installed_ver = get_option('interoil_db_version');
+    $installed_ver = get_option('interoil_db_news_version');
 
     if ($installed_ver != $interoil_db_news_version) {
         create_db_news();
