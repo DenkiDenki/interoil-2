@@ -63,8 +63,7 @@ function interoil_insert_news_item($data) {
         return ['status' => 'error', 'message' => "Faltan datos en la noticia."];
     }
 
-    $slug      = sanitize_title($title);
-    $permalink = home_url('/news/' . $slug);
+    $permalink = sanitize_title($title);
 
     // Log básico
     interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date", "Contenido: $content");
@@ -119,3 +118,14 @@ function interoil_news_js() {
     ]);
 }
 add_action('wp_enqueue_scripts', 'interoil_news_js');
+
+function interoil_add_rewrite_rules() {
+    add_rewrite_rule('^news/([^/]+)/?', 'index.php?interoil_news_permalink=$matches[1]', 'top');
+}
+add_action('init', 'interoil_add_rewrite_rules');
+
+function interoil_add_query_vars($vars) {
+    $vars[] = 'interoil_news_permalink';
+    return $vars;
+}
+add_filter('query_vars', 'interoil_add_query_vars');

@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:  Interoil Reports
- * Version: 1.0.38
+ * Version: 1.0.39
  * Description: This plugin provides functionalities to fetch, view, and storage reports
  * for Interoil operations. It is designed to integrate seamlessly with
  * WordPress.
@@ -21,6 +21,7 @@ require_once plugin_dir_path(__FILE__) . 'read-and-store-reports.php';
 require_once plugin_dir_path(__FILE__) . 'read-and-store-news.php';
 require_once plugin_dir_path(__FILE__) . 'shortcode-display.php';
 require_once plugin_dir_path(__FILE__) . 'shortcode-news.php';
+require_once plugin_dir_path(__FILE__) . 'includes/template-redirect.php';
 
 function plugin_interoil_reports_activate() {
     interoil_install();

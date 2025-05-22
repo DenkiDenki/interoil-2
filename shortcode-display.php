@@ -26,7 +26,7 @@ function interoil_reports_shortcode($atts) {
     );
 
     if (!$reports) {
-        return "<p>No hay informes disponibles.</p>";
+        return "<p>No reports available.</p>";
     }
 
     $pdfs_by_category = [];
