@@ -23,7 +23,7 @@ function interoil_read_and_store_reports($newReports) {
             $upload_url = trailingslashit($upload_dir['baseurl']) . 'pdfs/reports/' . $file_name;
 
             if (file_exists($full_route)) {
-                interoil_crear_txt_en_uploads('log-reporte', "⚠️ El archivo ya existe: " . $full_route);
+                //interoil_crear_txt_en_uploads('log-reporte', "⚠️ El archivo ya existe: " . $full_route);
                 continue;
             }
 

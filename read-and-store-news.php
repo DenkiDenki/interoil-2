@@ -1,24 +1,104 @@
 <?php
-function interoil_read_and_store_news($newPosts) {
-    global $wpdb;
-    $table_news = $wpdb->prefix . "interoil_news";
+/**
+ * Manejo AJAX para guardar news
+ */
+function save_news_ajax() {
+    check_ajax_referer('interoil-news', 'security');
 
-    if (!empty($newPosts)) {
-        //$upload_dir = wp_upload_dir();
-        //$destination_folder = trailingslashit($upload_dir['basedir']) . 'pdfs/reports/';
-
-        foreach ($newPosts as $report) {
-            $title = sanitize_text_field($report['title']);
-            $link = esc_url_raw($report['link']);
-            $date = sanitize_text_field($report['date']);
-            $content = sanitize_textarea_field($report['post_body'] ?? '');
-            interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date", "Contenido: $content");
-        }
-    } else {
-        interoil_crear_txt_en_uploads('log-reporte', "⚠️ No se recibieron datos válidos.");
+    if (empty($_POST['news'])) {
+        wp_send_json_error(['message' => 'Datos no recibidos - NEWS.']);
+        wp_die();
     }
+
+    $newPosts = json_decode(stripslashes($_POST['news']), true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        wp_send_json_error(['message' => 'JSON news mal formado.']);
+        wp_die();
+    }
+
+    $response = [
+        'status'  => 'ok',
+        'saved'   => 0,
+        'skipped' => 0,
+        'errors'  => [],
+    ];
+
+    foreach ($newPosts as $post) {
+        $result = interoil_insert_news_item($post);
+
+        if ($result['status'] === 'saved') {
+            $response['saved']++;
+        } elseif ($result['status'] === 'skipped') {
+            $response['skipped']++;
+        } else {
+            $response['errors'][] = $result['message'];
+        }
+    }
+
+    wp_send_json_success([
+        'message'  => 'Datos procesados correctamente.',
+        'response' => $response
+    ]);
+
+    wp_die();
 }
 
+add_action('wp_ajax_guardar_news', 'save_news_ajax');
+add_action('wp_ajax_nopriv_guardar_news', 'save_news_ajax');
+
+/**
+ * Inserta una noticia, loguea y devuelve el resultado
+ */
+function interoil_insert_news_item($data) {
+    global $wpdb;
+    $table_news = $wpdb->prefix . "interoil_newsposts";
+
+    $title   = sanitize_text_field($data['title'] ?? '');
+    $link    = esc_url_raw($data['link'] ?? '');
+    $date    = sanitize_text_field($data['date'] ?? '');
+    $content = sanitize_textarea_field($data['post_body'] ?? '');
+
+    if (empty($title) || empty($link)) {
+        return ['status' => 'error', 'message' => "Faltan datos en la noticia."];
+    }
+
+    $slug      = sanitize_title($title);
+    $permalink = home_url('/news/' . $slug);
+
+    // Log básico
+    interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date", "Contenido: $content");
+
+    $existe = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table_news WHERE location_url = %s",
+        $link
+    ));
+
+    if ($existe > 0) {
+        interoil_crear_txt_en_uploads('log-reporte', "⏩ Noticia ya existente, se omite: $title");
+        return ['status' => 'skipped'];
+    }
+
+    $inserted = $wpdb->insert(
+        $table_news,
+        [
+            'published_date' => $date,
+            'title'          => $title,
+            'location_url'   => $link,
+            'permalink'      => $permalink,
+            'content'        => $content
+        ],
+        ['%s', '%s', '%s', '%s', '%s']
+    );
+
+    if ($inserted === false) {
+        interoil_crear_txt_en_uploads('log-reporte', "❌ Error al insertar noticia: $title - Error: " . $wpdb->last_error);
+        return ['status' => 'error', 'message' => "Error al insertar $title"];
+    }
+
+    interoil_crear_txt_en_uploads('log-reporte', "✅ Noticia guardada: $title");
+    return ['status' => 'saved'];
+}
 
 /**
  * Encola un script JS y pasa datos al mismo.

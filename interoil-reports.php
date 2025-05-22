@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:  Interoil Reports
- * Version: 1.0.36
+ * Version: 1.0.38
  * Description: This plugin provides functionalities to fetch, view, and storage reports
  * for Interoil operations. It is designed to integrate seamlessly with
  * WordPress.

@@ -9,11 +9,10 @@ function interoil_install() {
 
     if ($installed_ver != $interoil_db_version) {
         create_db_reports();
-        create_db_news();
         update_option('interoil_db_version', $interoil_db_version);
     }
     
-    add_option('interoil_db_version', $interoil_db_version);
+    //add_option('interoil_db_version', $interoil_db_version);
 }
 
 function create_db_reports() {
@@ -80,7 +79,7 @@ global $interoil_db_version, $wpdb, $charset_collate;
     }
 }
 
-register_activation_hook(__FILE__, 'interoil_install');
+//register_activation_hook(__FILE__, 'interoil_install');
 
 function save_reports_ajax() {
     global $wpdb;
@@ -118,7 +117,7 @@ function save_reports_ajax() {
     ];
 
     // Log en error_log para verificar desde PHP
-    error_log(print_r($newReports, true));
+    //error_log(print_r($newReports, true));
 
     if (is_array($newReports)) {
         $upload_dir = wp_upload_dir();

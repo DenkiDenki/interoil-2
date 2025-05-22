@@ -1,7 +1,7 @@
 <?php
 function interoil_news_shortcode($atts) {
     global $wpdb;
-    $table_news = $wpdb->prefix . "interoil_news";
+    $table_news = $wpdb->prefix . "interoil_newsposts";
     
     $atts = shortcode_atts(
         array(
