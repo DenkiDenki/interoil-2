@@ -12,7 +12,6 @@ function interoil_news_install() {
         update_option('interoil_db_news_version', $interoil_db_news_version);
     }
     
-    //add_option('interoil_db_news_version', $interoil_db_news_version);
 }
 
 function create_db_news() {
@@ -27,7 +26,7 @@ function create_db_news() {
     $sql_news = "CREATE TABLE $table_news (
         id INT(10) NOT NULL AUTO_INCREMENT PRIMARY KEY,
         published_date VARCHAR(50) NULL,
-        title VARCHAR(150) NOT NULL,
+        title TEXT NOT NULL,
         location_url VARCHAR(150) NULL,
         permalink TEXT NOT NULL,
         content TEXT NULL,
@@ -42,5 +41,3 @@ function create_db_news() {
     error_log("Versión de la base de datos de noticias: " . $interoil_db_news_version);
 
 }
-
-//register_activation_hook(__FILE__, 'interoil_news_install');

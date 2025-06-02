@@ -21,6 +21,7 @@ function interoil_reports_shortcode($atts) {
         "SELECT p.published_date, p.file_name, p.upload_dir, c.name AS category, c.description
          FROM {$wpdb->prefix}interoil_pdfs p
          JOIN {$wpdb->prefix}interoil_categories c ON p.category_id = c.id
+         WHERE p.category_id != 6
          ORDER BY p.published_date DESC",
         ARRAY_A
     );
@@ -264,6 +265,13 @@ function interoil_reports_shortcode($atts) {
         </style>
         <div class="reports-container">
             <div class="accordion-report" id="accordion-report">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <h3 class="category-name left-content">Finacial Calendar</h3>
+                    <span class="right-content"><i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
+                </div>
+                <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
+                    <h3 class="category-description"><a href="https://live.euronext.com/en/listview/financial-events/NO0013119255">Upcoming events</a></h3>
+                </div>
                 <?php foreach ($pdfs_by_category as $category => $data): ?>
                     <?php
                         $items = $data['items'];
@@ -290,12 +298,12 @@ function interoil_reports_shortcode($atts) {
                         ];
                         
                     ?>
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
                     <h3 class="category-name left-content"><?php echo esc_html($category); ?></h3>
                     <span class="right-content"><i class="fa <?php echo $first ? 'fa-minus' : 'fa-plus'; ?> icon" aria-hidden="true"></i></span>
                 </div>
                 <div class="accordion-content <?php echo $first ? 'open' : ''; ?>">
-                <h3 class="category-description"><?php echo wp_kses($description, $allowed_tags); ?></h3>
+                    <h3 class="category-description"><?php echo wp_kses($description, $allowed_tags); ?></h3>
                     <div class="year-tabs">
                         <?php foreach ($years as $i => $year): ?>
                             <button class="year-tab <?php echo $i === 0 ? 'active' : ''; ?>" onclick="switchYear(event, '<?php echo mb_strtolower((str_replace(' ', '', $category)),'UTF-8') . '-' . $year;str_replace(' ', '', $category) . '-' . $year; ?>')"><?php echo $year; ?></button>
@@ -389,6 +397,7 @@ function interoil_reports_shortcode($atts) {
 
             container.style.maxHeight = container.scrollHeight + "px";
         }
+        /** *
         const financialLinks = document.querySelectorAll('[id^="financialcalendar-"] a');
         
         financialLinks.forEach(link => {
@@ -400,7 +409,7 @@ function interoil_reports_shortcode($atts) {
         link.style.pointerEvents = 'none';
         link.style.cursor = 'default';
         link.style.decoration = 'none';
-        });
+        });*/
     </script>
     <?php
     return ob_get_clean();

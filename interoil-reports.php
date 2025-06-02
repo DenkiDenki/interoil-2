@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:  Interoil Reports
- * Version: 1.0.39
+ * Version: 1.0.49
  * Description: This plugin provides functionalities to fetch, view, and storage reports
  * for Interoil operations. It is designed to integrate seamlessly with
  * WordPress.
@@ -29,6 +29,13 @@ function plugin_interoil_reports_activate() {
     flush_rewrite_rules();
 }
 register_activation_hook(__FILE__, 'plugin_interoil_reports_activate');
+
+add_action('wp_enqueue_scripts', function() {
+    // Elementor debe cargar su frontend config
+    if ( did_action( 'elementor/frontend/after_register_scripts' ) ) {
+        wp_enqueue_script( 'elementor-frontend' );
+    }
+});
 
 function plugin_interoil_reports_deactivate() {
     flush_rewrite_rules();

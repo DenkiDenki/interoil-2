@@ -93,7 +93,7 @@ function interoil_read_and_store_reports($newReports) {
                     'upload_dir'     => $upload_url,
                     'category_id'    => $category_id,
                 ]);
-                interoil_crear_txt_en_uploads('log-reporte', "✅ Reporte guardado: $title");
+                
             } else {
                 interoil_crear_txt_en_uploads('log-reporte', "⚠️ Ya existe en la base de datos: $link");
             }
@@ -103,17 +103,13 @@ function interoil_read_and_store_reports($newReports) {
     }
 }
 
-/**
- * Convierte el nombre a un slug para el archivo PDF.
- */
+
 function convert_name_to_slug_pdf($original_name) {
     $slug = sanitize_title($original_name); 
     return $slug . '.pdf';
 }
 
-/**
- * Crea un archivo TXT en el directorio de uploads.
- */
+
 function interoil_crear_txt_en_uploads($file_name, $content) {
     $upload_dir = wp_upload_dir();
     $target_dir = trailingslashit($upload_dir['basedir']) . 'pdfs/';
@@ -136,22 +132,22 @@ function interoil_crear_txt_en_uploads($file_name, $content) {
     return "✅ Archivo creado correctamente en: " . $path_file;
 }
 
-/**
- * Encola un script JS y pasa datos al mismo.
- */
 function interoil_reports_js() {
-    wp_enqueue_script(
-        'interoil-reports-xml',
-        plugin_dir_url(__FILE__) . 'js/fetch-xml.js',
-        [],
-        filemtime(plugin_dir_path(__FILE__) . 'js/fetch-xml.js'),
-        true
-    );
+    
+     if ( did_action( 'elementor/frontend/after_register_scripts' ) ) {
+        wp_enqueue_script(
+            'interoil-reports-xml',
+            plugin_dir_url(__FILE__) . 'js/fetch-xml.js',
+            ['elementor-frontend', 'jquery'],
+            filemtime(plugin_dir_path(__FILE__) . 'js/fetch-xml.js'),
+            true
+        );
 
-    wp_localize_script('interoil-reports-xml', 'reports_object', [
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce'    => wp_create_nonce('interoil-reports')
-    ]);
+        wp_localize_script('interoil-reports-xml', 'reports_object', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('interoil-reports')
+        ]);
 
+    }
 }
-add_action('wp_enqueue_scripts', 'interoil_reports_js');
+add_action('wp_enqueue_scripts', 'interoil_reports_js', 20);

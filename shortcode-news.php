@@ -33,12 +33,17 @@ function interoil_news_shortcode($atts) {
         ];
     }, $newsPost);
 
+    usort($newsPost, function($a, $b) {
+      return strtotime($b['date']) - strtotime($a['date']);
+    });
+
     $items_by_year = [];
     foreach ($newsPost as $item) {
       $year = date('Y', strtotime($item['date']));
       $items_by_year[$year][] = $item;
     }
     krsort($items_by_year);
+    
     $years = array_keys($items_by_year);
     $latest_year = $years[0];
     $latest_items = $items_by_year[$latest_year];
@@ -46,16 +51,15 @@ function interoil_news_shortcode($atts) {
     
       ob_start();
 
-     // Display the latest news item
     ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
       .news-general-container{
-        font-weight: 100!important;
+        
         font-family: "Acumin", Sans-serif;
         color: #1C6C8E;
-
+        margin: 80px 0;
       }
       .news-container {
         display: grid;
@@ -66,13 +70,13 @@ function interoil_news_shortcode($atts) {
 
       .news-items-container {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 20px 40px;
         color: #1C6C8E;
       }
       .news-header{
         font-size: 3.5em;
-        lineheight: 1.2;
+        line-height: 1.2;
         margin-bottom: 45px;
         color: #1C6C8E;
         font-weight: 300;
@@ -104,19 +108,24 @@ function interoil_news_shortcode($atts) {
         text-align: left;
       }
       .news-item-date{
-        font-size: 0.9rem;
-        padding-bottom: 10px;
+        font-size: 0.8rem;
       }
       .news-item-title{
-        font-size: 3em;
+        font-size: 2.5em;
         margin-bottom: 45px;
         color: #1C6C8E;
         line-height: 1.2;
-        font-weight: 100!important;
+        font-weight: lighter;
         font-family: "Acumin", Sans-serif;
+      }
+      .news-item-title-link{
+        color: #1C6C8E;
       }
       .news-item-permalink{
         font-size: 13px;
+      }
+      .news-item-permalink span{
+        padding-left: 20px;
       }
       .align-right.link{
         visinle: hidden;
@@ -131,19 +140,40 @@ function interoil_news_shortcode($atts) {
         align-items: center;
         margin-bottom: 20px;
       }
+      .year-list h5 {
+        font-size: 0.8rem;
+        font-weight: bold;
+      }
       .year-list ul {
         list-style: none;
         padding: 0;
         margin: 0;
+        font-weight: lighter;
       }
-
+      a.year-link:hover{
+        text-decoration: underline;
+      }
+    
 
       @media (max-width: 768px) {
-        .news-container {
-          grid-template-columns: repeat(2, 1fr);
+        .news-general-container {
+          grid-template-columns: 1fr;
         }
         .news-container {
           grid-template-columns: 1fr;
+        }
+        .news-items-container {
+          grid-template-columns: 1fr;
+        }
+        .year-list ul{
+          display: inline-flex;
+          gap: 20px;
+        }
+        .news-item-title{
+          font-size: 2em;
+        }
+        .news-header{
+        font-size: 2.5em;
         }
       }
 
@@ -159,10 +189,10 @@ function interoil_news_shortcode($atts) {
      
           <div class="year-list-container">
             <div class="year-list">
-                <h5>Date</h5>
+                <h5>DATE</h5>
                 <ul>
                     <?php foreach ($years as $year): ?>
-                        <li><a href="javascript:void(0);" data-filter-year="<?php echo esc_attr($year); ?>"><?php echo esc_html($year); ?></a></li>
+                        <li><a class="year-link" href="javascript:void(0);" data-filter-year="<?php echo esc_attr($year); ?>"><?php echo esc_html($year); ?></a></li>
                     <?php endforeach; ?>
                 </ul>
             </div>
@@ -173,11 +203,11 @@ function interoil_news_shortcode($atts) {
               <?php $year = date('Y', strtotime($post['date'])); ?>
                 <div class="news-item" data-year="<?php echo esc_attr($year); ?>">
                     <p class="align-left news-item-date"><?php echo esc_html($post['date']); ?></p>
-                    <a href="<?php echo home_url('/news/' . esc_attr($post['permalink'])); ?>"><h2 class="align-left news-item-title"><?php echo esc_html($post['title']); ?></h2></a>
+                    <a class="news-item-title-link" href="<?php echo home_url('/news/' . esc_attr($post['permalink'])); ?>"><h2 class="align-left news-item-title"><?php echo esc_html($post['title']); ?></h2></a>
                     <p class="align-right link"><a href="<?php echo esc_url($post['link']); ?>" target="_blank">link</a></p>
                     <p class="align-right news-item-permalink">
-                      <a href="<?php echo esc_url($post['permalink']); ?>">Read More</a>
-                      <span class="right-content"><i class="fa fa-plus icon" aria-hidden="true"></i></span>
+                      <a href="<?php echo home_url('/news/' . esc_attr($post['permalink'])); ?>">Read More
+                      <span class="right-content"><i class="fa fa-plus icon" aria-hidden="true"></i></span></a>
                   </p>
                 </div>
             <?php endforeach; ?>
@@ -186,7 +216,7 @@ function interoil_news_shortcode($atts) {
  </div>
  <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Mostrar contenedor al cargar
+
   document.querySelector('.news-container').style.display = 'grid';
 
   const yearLinks = document.querySelectorAll('[data-filter-year]');
@@ -217,10 +247,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // Mostrar noticias del último año al cargar
   showNewsByYear(latestYear);
 
-  // Click en los años
   document.querySelectorAll("#year-list a").forEach(link => {
     link.addEventListener("click", e => {
       e.preventDefault();
@@ -229,6 +257,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+const itemsDate = document.querySelectorAll(".news-item-date"); 
+        itemsDate.forEach(publishedDate => {
+            let dateAndTime = publishedDate.innerText;
+            let date = dateAndTime.split("T")[0];
+            let partes = date.split("-");
+            let year = partes[0];
+            let month = partes[1];
+            let day = partes[2];
+
+            let formatDate = `${day}.${month}.${year}`;
+            publishedDate.innerText = formatDate;
+        });
 
 </script>
      <?php

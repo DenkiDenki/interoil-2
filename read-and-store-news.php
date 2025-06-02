@@ -1,7 +1,5 @@
 <?php
-/**
- * Manejo AJAX para guardar news
- */
+
 function save_news_ajax() {
     check_ajax_referer('interoil-news', 'security');
 
@@ -47,17 +45,69 @@ function save_news_ajax() {
 add_action('wp_ajax_guardar_news', 'save_news_ajax');
 add_action('wp_ajax_nopriv_guardar_news', 'save_news_ajax');
 
-/**
- * Inserta una noticia, loguea y devuelve el resultado
- */
+
 function interoil_insert_news_item($data) {
     global $wpdb;
     $table_news = $wpdb->prefix . "interoil_newsposts";
+    $allowed_tags = array(
+        'p'      => array('align' => array(), 'id' => array(), 'style' => array()),
+        'strong' => array(),
+        'u'      => array(),
+        'ul'     => array('id' => array(), 'style' => array()),
+        'li'     => array(),
+        'a'      => array(
+            'href'   => array(),
+            'title'  => array(),
+            'rel'    => array(),
+            'target' => array()
+        ),
+        'img'    => array(
+            'src'            => array(),
+            'alt'            => array(),
+            'referrerpolicy' => array(),
+            'style'          => array()
+        ),
+        'br'     => array(),
+        'em'     => array(),
+        'i'      => array(),
+        'b'      => array(),
+        'h1'     => array(),
+        'h2'     => array(),
+        'h3'     => array(),
+        'h4'     => array(),
+        'h5'     => array(),
+        'h6'     => array(),
+        'blockquote' => array(),
+        'div'    => array(),
+        'span'   => array(),
+        'table'  => array(
+            'border'      => array(),
+            'cellpadding' => array(),
+            'cellspacing' => array(),
+            'width'       => array(),
+            'style'       => array(),
+        ),
+        'tr'     => array('style' => array()),
+        'td'     => array(
+            'style'   => array(),
+            'colspan' => array(),
+            'align'   => array(),
+            'valign'  => array(),
+            'width'   => array()
+        ),
+        'th'     => array(),
+        'thead'  => array(),
+        'tbody'  => array(),
+        'tfoot'  => array(),
+        'code'   => array(),
+        'pre'    => array(),
+        'hr'     => array(),
+    );
 
     $title   = sanitize_text_field($data['title'] ?? '');
     $link    = esc_url_raw($data['link'] ?? '');
     $date    = sanitize_text_field($data['date'] ?? '');
-    $content = sanitize_textarea_field($data['post_body'] ?? '');
+    $content = wp_kses($data['post_body'], $allowed_tags);
 
     if (empty($title) || empty($link)) {
         return ['status' => 'error', 'message' => "Faltan datos en la noticia."];
@@ -65,7 +115,6 @@ function interoil_insert_news_item($data) {
 
     $permalink = sanitize_title($title);
 
-    // Log básico
     interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date", "Contenido: $content");
 
     $existe = $wpdb->get_var($wpdb->prepare(
@@ -99,25 +148,23 @@ function interoil_insert_news_item($data) {
     return ['status' => 'saved'];
 }
 
-/**
- * Encola un script JS y pasa datos al mismo.
- */
 function interoil_news_js() {
-    
-    wp_enqueue_script(
-        'interoil-news-xml',
-        plugin_dir_url(__FILE__) . 'js/fetch-news.js',
-        [],
-        filemtime(plugin_dir_path(__FILE__) . 'js/fetch-news.js'),
-        true
-    );
+    if ( did_action( 'elementor/frontend/after_register_scripts' ) ) {
+        wp_enqueue_script(
+            'interoil-news-xml',
+            plugin_dir_url(__FILE__) . 'js/fetch-news.js',
+            ['elementor-frontend','jquery'],
+            filemtime(plugin_dir_path(__FILE__) . 'js/fetch-news.js'),
+            true
+        );
 
-    wp_localize_script('interoil-news-xml', 'news_object', [
-        'ajax_url' => admin_url('admin-ajax.php'),
-        'nonce'    => wp_create_nonce('interoil-news')
-    ]);
+        wp_localize_script('interoil-news-xml', 'news_object', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce'    => wp_create_nonce('interoil-news')
+        ]);
+    }
 }
-add_action('wp_enqueue_scripts', 'interoil_news_js');
+add_action('wp_enqueue_scripts', 'interoil_news_js', 20);
 
 function interoil_add_rewrite_rules() {
     add_rewrite_rule('^news/([^/]+)/?', 'index.php?interoil_news_permalink=$matches[1]', 'top');
