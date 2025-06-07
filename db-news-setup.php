@@ -37,7 +37,7 @@ function create_db_news() {
     if($wpdb->get_var("SHOW TABLES LIKE '$table_news'") != $table_news) {
         error_log("Error: No se creó la tabla $table_news");
     }
-    error_log("Tabla $table_news creada o ya existe.");
-    error_log("Versión de la base de datos de noticias: " . $interoil_db_news_version);
+    //error_log("Tabla $table_news creada o ya existe.");
+    //error_log("Versión de la base de datos de noticias: " . $interoil_db_news_version);
 
 }
