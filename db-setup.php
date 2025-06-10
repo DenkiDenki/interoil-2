@@ -11,8 +11,6 @@ function interoil_install() {
         create_db_reports();
         update_option('interoil_db_version', $interoil_db_version);
     }
-    
-    //add_option('interoil_db_version', $interoil_db_version);
 }
 
 function create_db_reports() {
@@ -22,7 +20,6 @@ global $interoil_db_version, $wpdb, $charset_collate;
     $table_reports = $wpdb->prefix . "interoil_pdfs";
     $table_categories = $wpdb->prefix . "interoil_categories";
 
-    // Incluir las funciones de actualización de base de datos de WordPress
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     
     $sql_categories = "CREATE TABLE $table_categories (
@@ -87,25 +84,22 @@ function save_reports_ajax() {
     $table_pdfs = $wpdb->prefix . "interoil_pdfs";
     $table_categories = $wpdb->prefix . "interoil_categories";
 
-    error_log("Nonce recibido: " . ($_POST['security'] ?? 'NULL'));
-    //check_ajax_referer('interoil-reports', 'security');
-   
-    // Verificar nonce
+    error_log("Nonce received: " . ($_POST['security'] ?? 'NULL'));
+  
     if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'interoil-reports')) {
-        wp_send_json_error(['message' => 'Nonce inválido.']);
+        wp_send_json_error(['message' => 'Nonce not valid.']);
         wp_die();
     }
 
-    // Verificar datos
     if (!isset($_POST['datos'])) {
-        wp_send_json_error(['message' => 'Datos no recibidos.']);
+        wp_send_json_error(['message' => 'Data not received.']);
         wp_die();
     }
 
     $newReports = json_decode(stripslashes($_POST['datos']), true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        wp_send_json_error(['message' => 'JSON mal formado.']);
+        wp_send_json_error(['message' => 'JSON malformed.']);
         wp_die();
     }
 
@@ -115,9 +109,6 @@ function save_reports_ajax() {
         'skipped' => 0,
         'errors' => [],
     ];
-
-    // Log en error_log para verificar desde PHP
-    //error_log(print_r($newReports, true));
 
     if (is_array($newReports)) {
         $upload_dir = wp_upload_dir();
@@ -159,7 +150,7 @@ function save_reports_ajax() {
                 if ($inserted !== false) {
                     $response['saved']++;
                 } else {
-                    $response['errors'][] = "Error al insertar reporte: $title";
+                    $response['errors'][] = "Error inserting report: $title";
                 }
             } else {
                 $response['skipped']++;
@@ -169,13 +160,6 @@ function save_reports_ajax() {
         require_once plugin_dir_path(__FILE__) . 'read-and-store-reports.php';
         interoil_read_and_store_reports($newReports);
 
-        // Devolver respuesta a JS
-        wp_send_json_success([
-            'message' => 'Datos recibidos correctamente.',
-            'datos'   => $newReports,
-            'response' => $response
-        ]);
-        
     } else {
         wp_send_json_error(['message' => 'Datos no válidos o JSON mal formado.']);
     }

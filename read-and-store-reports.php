@@ -19,13 +19,13 @@ function interoil_read_and_store_reports($newReports) {
             $category = sanitize_text_field($report['category'] ?? 'Reports and Presentations');
 
             if (!filter_var($link, FILTER_VALIDATE_URL)) {
-                interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no válido: " . $link);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Link not valid: " . $link);
                 continue;
             }
 
             $headers = get_headers($link, 1);
             if ($headers === false || strpos($headers[0], '200') === false) {
-                interoil_crear_txt_en_uploads('log-reporte', "❌ Enlace no accesible: " . $link);
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Link not accessible: " . $link);
                 continue;
             }
 
@@ -44,7 +44,7 @@ function interoil_read_and_store_reports($newReports) {
             }
 
             if ($content_type !== 'application/pdf') {
-                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Descargando archivo no PDF ($content_type): $link");
+                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Downloading non PDF file ($content_type): $link");
             }
 
             $ch = curl_init($link);
@@ -57,7 +57,7 @@ function interoil_read_and_store_reports($newReports) {
             if (curl_errno($ch)) {
                 fclose($fp);
                 curl_close($ch);
-                interoil_crear_txt_en_uploads('log-reporte', "❌ Error al descargar archivo desde: $link");
+                interoil_crear_txt_en_uploads('log-reporte', "❌ Error downloading file from: $link");
                 continue;
             }
 
@@ -91,11 +91,11 @@ function interoil_read_and_store_reports($newReports) {
                     'category_id'    => $category_id,
                 ]);
             } else {
-                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Ya existe en la base de datos: $link");
+                interoil_crear_txt_en_uploads('log-reporte', "⚠️ Already exists in the database: $link");
             }
         }
     } else {
-        interoil_crear_txt_en_uploads('log-reporte', "⚠️ No se recibieron datos válidos.");
+        interoil_crear_txt_en_uploads('log-reporte', "⚠️ No valid data were received.");
     }
 }
 
@@ -138,11 +138,11 @@ function interoil_crear_txt_en_uploads($file_name, $content) {
     $result = file_put_contents($path_file, $content_to_write, FILE_APPEND);
 
     if ($result === false) {
-        error_log("❌ Error al escribir en el archivo de log.");
+        error_log("❌ Error writing to log file.");
         return false;
     }
 
-    return "✅ Archivo creado correctamente en: " . $path_file;
+    return "✅ File successfully created in: " . $path_file;
 }
 
 function interoil_reports_js() {
@@ -170,14 +170,14 @@ function interoil_fetch_and_parse_xml() {
     $response = wp_remote_get($url);
 
     if (is_wp_error($response)) {
-        interoil_crear_txt_en_uploads('log-reporte', '❌ Error al obtener el XML: ' . $response->get_error_message());
+        interoil_crear_txt_en_uploads('log-reporte', '❌ Error getting the XML: ' . $response->get_error_message());
         return [];
     }
 
     $xml = wp_remote_retrieve_body($response);
 
     if (empty($xml)) {
-        interoil_crear_txt_en_uploads('log-reporte', '❌ XML vacío.');
+        interoil_crear_txt_en_uploads('log-reporte', '❌ Empty XML.');
         return [];
     }
     
@@ -194,29 +194,28 @@ function interoil_fetch_and_parse_xml() {
     $xml = file_get_contents($tempLocalPath);
 
     if (!$xml) {
-        interoil_crear_txt_en_uploads('log-reporte', '❌ No se pudo parsear el XML.');
+        interoil_crear_txt_en_uploads('log-reporte', '❌ error on XML.');
         return [];
     }
 	
 	preg_match_all('/<report([^>]*)>(.*?)<\/report>/s', $xml, $reports, PREG_SET_ORDER);
     if (empty($reports)) {
-        interoil_crear_txt_en_uploads('log-reporte', '❌ No se encontraron reportes en el XML.');
+        interoil_crear_txt_en_uploads('log-reporte', '❌ No reports were found in the XML.');
         return [];
     }
 	
 	$newReports = [];
 	foreach ($reports as $file) {
-        $attrString = $file[1];  // atributos dentro de <report ...>
-        $content = $file[2];     // contenido entre <report> ... </report>
+        $attrString = $file[1];  // <report ...>
+        $content = $file[2];     // <report> ... </report>
     
-        // Extraer atributos del string $attrString
         preg_match_all('/(\w+)\s*=\s*"([^"]*)"/', $attrString, $attrs, PREG_SET_ORDER);
         $attributes = [];
         foreach ($attrs as $attr) {
             $attributes[$attr[1]] = $attr[2];
         }
         
-        // Extraer contenido de <file_headline><![CDATA[...]]></file_headline> dentro de $content
+        // <file_headline><![CDATA[...]]></file_headline>
         preg_match('/<file_headline><!\[CDATA\[(.*?)\]\]><\/file_headline>/', $content, $headlineMatch);
         $fileHeadline = $headlineMatch[1] ?? null;
 
@@ -237,21 +236,19 @@ function interoil_fetch_and_parse_xml() {
 
 	}
 	
-	interoil_crear_txt_en_uploads('log-reporte', print_r($newReports, true));
+	
 
     return $newReports;
 }
 
 //cron call back
 function interoil_cron_task() {
-    // 🔹 Obtener reports como en JS pero desde PHP
     $newReports = interoil_fetch_and_parse_xml();
 
-    // 🔹 Procesarlos
     interoil_read_and_store_reports($newReports);
 
-    // 🔹 Registrar que se ejecutó
-    interoil_crear_txt_en_uploads('log-reporte', "✅ Cron ejecutado correctamente con " . count($newReports) . " reportes.");
+    interoil_crear_txt_en_uploads('log-reporte', "✅ Cron executed correctly with " . count($newReports) . " reports.");
+    interoil_crear_txt_en_uploads('log-reporte', print_r($newReports, true));
 }
 
 /**  */
@@ -265,11 +262,11 @@ function interoil_handle_ajax_guardar_reports() {
     $newReports = json_decode($json_data, true);
 
     if (empty($newReports) || !is_array($newReports)) {
-        wp_send_json_error('❌ Datos inválidos.');
+        wp_send_json_error('❌ Invalid data.');
         return;
     }
 
     interoil_read_and_store_reports($newReports);
 
-    wp_send_json_success('✅ Reports procesados correctamente.');
+    wp_send_json_success('✅ Reports processed correctly.');
 }

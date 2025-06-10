@@ -1,17 +1,16 @@
 <?php
-
 function save_news_ajax() {
     check_ajax_referer('interoil-news', 'security');
 
     if (empty($_POST['news'])) {
-        wp_send_json_error(['message' => 'Datos no recibidos - NEWS.']);
+        wp_send_json_error(['message' => 'Data not received - NEWS.']);
         wp_die();
     }
 
     $newPosts = json_decode(stripslashes($_POST['news']), true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        wp_send_json_error(['message' => 'JSON news mal formado.']);
+        wp_send_json_error(['message' => 'JSON news malformed.']);
         wp_die();
     }
 
@@ -35,7 +34,7 @@ function save_news_ajax() {
     }
 
     wp_send_json_success([
-        'message'  => 'Datos procesados correctamente.',
+        'message'  => 'Data processed correctly.',
         'response' => $response
     ]);
 
@@ -107,15 +106,16 @@ function interoil_insert_news_item($data) {
     $title   = sanitize_text_field($data['title'] ?? '');
     $link    = esc_url_raw($data['link'] ?? '');
     $date    = sanitize_text_field($data['date'] ?? '');
-    $content = wp_kses($data['post_body'], $allowed_tags);
+    $content = str_replace( array( '<![CDATA[', ']]>' ), '', $data['post_body'] );
+    $content = wp_kses($content, $allowed_tags);
 
     if (empty($title) || empty($link)) {
-        return ['status' => 'error', 'message' => "Faltan datos en la noticia."];
+        return ['status' => 'error', 'message' => "Data are missing in the news item."];
     }
 
     $permalink = sanitize_title($title);
 
-    interoil_crear_txt_en_uploads('log-reporte', "Título: $title, Enlace: $link, Fecha: $date", "Contenido: $content");
+    //interoil_crear_txt_en_uploads('log-news', "Title: $title, Link: $link, Date: $date", "Content: $content");
 
     $existe = $wpdb->get_var($wpdb->prepare(
         "SELECT COUNT(*) FROM $table_news WHERE location_url = %s",
@@ -123,7 +123,7 @@ function interoil_insert_news_item($data) {
     ));
 
     if ($existe > 0) {
-        interoil_crear_txt_en_uploads('log-reporte', "⏩ Noticia ya existente, se omite: $title");
+        //interoil_crear_txt_en_uploads('log-news', "⏩ Existing news item is omitted: $title");
         return ['status' => 'skipped'];
     }
 
@@ -140,11 +140,11 @@ function interoil_insert_news_item($data) {
     );
 
     if ($inserted === false) {
-        interoil_crear_txt_en_uploads('log-reporte', "❌ Error al insertar noticia: $title - Error: " . $wpdb->last_error);
-        return ['status' => 'error', 'message' => "Error al insertar $title"];
+        interoil_crear_txt_en_uploads('log-news', "❌ Error inserting new: $title - Error: " . $wpdb->last_error);
+        return ['status' => 'error', 'message' => "Error inserting $title"];
     }
 
-    interoil_crear_txt_en_uploads('log-reporte', "✅ Noticia guardada: $title");
+    interoil_crear_txt_en_uploads('log-news', "✅ Save new: $title");
     return ['status' => 'saved'];
 }
 
@@ -176,3 +176,104 @@ function interoil_add_query_vars($vars) {
     return $vars;
 }
 add_filter('query_vars', 'interoil_add_query_vars');
+
+function interoil_fetch_and_parse_news() {
+    $url = 'https://rss.globenewswire.com/HexmlFeed/organization/dBwf4frPXJHvuGJ2iT_UgA==/';
+    $response = wp_remote_get($url);
+
+    if (is_wp_error($response)) {
+        interoil_crear_txt_en_uploads('log-news', '❌ Error getting the XML: ' . $response->get_error_message());
+        return [];
+    }
+
+    $xml = wp_remote_retrieve_body($response);
+
+    if (empty($xml)) {
+        interoil_crear_txt_en_uploads('log-news', '❌ Empty XML.');
+        return [];
+    }
+    
+    $upload_dir = wp_upload_dir();
+    $target_dir = trailingslashit($upload_dir['basedir']) . 'pdfs/';
+
+    if (!file_exists($target_dir)) {
+        wp_mkdir_p($target_dir);
+    }
+
+	$tempLocalPath = $target_dir . "/data-news.xml";
+	file_put_contents($tempLocalPath, $xml);
+    
+    $xml = file_get_contents($tempLocalPath);
+
+    if (!$xml) {
+        interoil_crear_txt_en_uploads('log-news', '❌ The XML could not be parsed.');
+        return [];
+    }
+	
+	preg_match_all('/<press_release([^>]*)>(.*?)<\/press_release>/s', $xml, $releases, PREG_SET_ORDER);
+    if (empty($releases)) {
+        interoil_crear_txt_en_uploads('log-news', '❌ No reports were found in the XML.');
+        return [];
+    }
+	
+	$newReleases = [];
+	foreach ($releases as $post) {
+        $attrString = $post[1];  // <report ...>
+        $content = $post[2];     // <report> ... </report>
+    
+        // $attrString
+        preg_match_all('/(\w+)\s*=\s*"([^"]*)"/', $attrString, $attrs, PREG_SET_ORDER);
+        $attributes = [];
+        foreach ($attrs as $attr) {
+            $attributes[$attr[1]] = $attr[2];
+        }
+        
+        // <headline><![CDATA[...]]></headline>
+        preg_match('/<headline><!\[CDATA\[(.*?)\]\]><\/headline>/', $content, $headlineMatch);
+        $fileHeadline = $headlineMatch[1] ?? null;
+
+        //<published date="2025-04-28T08:09:29 CEST" />
+        //<link href="https://ml-eu.globenewswire.com/Resource/Download/4076aaed-a0b8-4cf5-8922-683fd92fcfd5" />
+        preg_match('/<published\s+date="([^"]+)"\s*\/>/', $content, $publishedMatch);
+        $publishedDate = $publishedMatch[1] ?? null;
+        $date = explode("T", $publishedDate)[0];
+
+        preg_match('/<location\s+href="([^"]+)"\s*\/>/', $content, $linkMatch);
+        $linkHref = $linkMatch[1] ?? null;
+
+        $urlPost = $linkHref;
+        $responsePost = wp_remote_get($urlPost);
+
+        if (is_wp_error($responsePost)) {
+            interoil_crear_txt_en_uploads('log-news', '❌ Error getting the XML: ' . $responsePost->get_error_message());
+            return;
+        }
+
+        $xmlPost = wp_remote_retrieve_body($responsePost);
+        interoil_crear_txt_en_uploads('log-news', print_r($xmlPost, true));
+
+        preg_match('/<main>(.*?)<\/main>/s', $xmlPost, $mainContentMatch);
+        $mainContent = $mainContentMatch[1] ?? '';
+
+        $newReleases[] = [
+            'title' => $fileHeadline,
+            'link'  => $linkHref,
+            'date'  => $date,
+            'post_body' => $mainContent,
+        ];
+	}
+	
+    return $newReleases;
+}
+//cron call back
+function interoil_cron_task_news() {
+
+    $newReleases = interoil_fetch_and_parse_news();
+
+    foreach ($newReleases as $release) {
+        $result = interoil_insert_news_item($release);
+    }
+    
+    interoil_crear_txt_en_uploads('log-news', "✅ Cron executed correctly with " . count($newReleases) . " news.");
+    interoil_crear_txt_en_uploads('log-news', print_r($newReleases, true));
+}

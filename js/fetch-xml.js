@@ -36,7 +36,7 @@ function fetchAndSendReports() {
     })
     .then(res => res.text())
     .catch(error => {
-      console.error("Error al obtener el XML de reports:", error);
+      console.error("Error getting the XML from reports:", error);
     });
 }
 

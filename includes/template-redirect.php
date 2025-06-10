@@ -245,7 +245,7 @@ function interoil_template_redirect() {
             <?php
             exit;
         } else {
-            interoil_crear_txt_en_uploads('log-reporte', "❌ Noticia no encontrada: $permalink - $news");
+            interoil_crear_txt_en_uploads('log-reporte', "❌ News not found: $permalink - $news");
             wp_redirect(home_url('/404'));
             exit;
         }

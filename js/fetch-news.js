@@ -32,15 +32,15 @@ function fetchAndSendNews() {
               const parser = new DOMParser();
               const post = parser.parseFromString(htmlText2, "application/xml");
 
-              const pageTitle = post.querySelector("headline")?.textContent.trim() || "Sin título";
-              const postBody = post.querySelector("main")?.textContent.trim() || "Sin texto";
+              const pageTitle = post.querySelector("headline")?.textContent.trim() || "No title";
+              const postBody = post.querySelector("main")?.textContent.trim() || "No content";
 
               newReleases[index].page_title = pageTitle;
               newReleases[index].post_body = postBody;
             })
             .catch(err => {
-              console.error(`Error al obtener contenido de ${release.link}:`, err);
-              newReleases[index].page_title = "Error al obtener título";
+              console.error(`Error getting content from ${release.link}:`, err);
+              newReleases[index].page_title = "Error getting the títle";
             });
         })
       ).then(() => newReleases);
@@ -58,7 +58,7 @@ function fetchAndSendNews() {
       .then(res2 => res2.text());
     })
     .catch(error => {
-      console.error("Error al obtener el XML News:", error);
+      console.error("Error getting the XML from News:", error);
     });
 }
 
